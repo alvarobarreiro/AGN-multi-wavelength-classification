@@ -318,7 +318,7 @@ image.plot(SFR_X, M_y, densidad_W2, col = viridis(1000), xlim = c(-3, 1.5), ylim
 image.plot(SFR_X, M_y, densidad_colorIR, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Density W1-W2')
 
-image.plot(SFR_X, M_y, densidad_color_W2_W1, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, densidad_color_W2_W1, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Density IR color')
 
 image.plot(SFR_X, M_y, densidad_q24, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
@@ -483,28 +483,28 @@ image.plot(SFR_X, M_y, Dispersion_colorX, col = matlab.like(1000), xlim = c(-3, 
 # Acotamos el rango dinámico de todas las luminosidades al intervalo (37.5 - 43.5):
 
 L_mean_IR_truncated <- L_mean_IR
-L_mean_IR_truncated[L_mean_IR_truncated > 43.5] <- 43.5
-L_mean_IR_truncated[L_mean_IR_truncated < 37.5] <- 37.5
+L_mean_IR_truncated[L_mean_IR_truncated > quantile(L_mean_IR, probs = 0.85)] <- quantile(L_mean_IR, probs = 0.85)
+L_mean_IR_truncated[L_mean_IR_truncated < quantile(L_mean_IR, probs = 0.15)] <- quantile(L_mean_IR, probs = 0.15)
 
 L_mean_IR1_truncated <- L_mean_IR1
-L_mean_IR1_truncated[L_mean_IR1_truncated > 43.5] <- 43.5
-L_mean_IR1_truncated[L_mean_IR1_truncated < 37.5] <- 37.5
+L_mean_IR1_truncated[L_mean_IR1_truncated > quantile(L_mean_IR1, probs = 0.85)] <- quantile(L_mean_IR1, probs = 0.85)
+L_mean_IR1_truncated[L_mean_IR1_truncated < quantile(L_mean_IR1, probs = 0.15)] <- quantile(L_mean_IR1, probs = 0.15)
 
 L_mean_IR2_truncated <- L_mean_IR2
-L_mean_IR2_truncated[L_mean_IR2_truncated > 43.5] <- 43.5
-L_mean_IR2_truncated[L_mean_IR2_truncated < 37.5] <- 37.5
+L_mean_IR2_truncated[L_mean_IR2_truncated > quantile(L_mean_IR2, probs = 0.85)] <- quantile(L_mean_IR2, probs = 0.85)
+L_mean_IR2_truncated[L_mean_IR2_truncated < quantile(L_mean_IR2, probs = 0.15)] <- quantile(L_mean_IR2, probs = 0.15)
 
 L_mean_Radio_truncated <- L_mean_Radio
-L_mean_Radio_truncated[L_mean_Radio_truncated > 43.5] <- 43.5
-L_mean_Radio_truncated[L_mean_Radio_truncated < 37.5] <- 37.5
+L_mean_Radio_truncated[L_mean_Radio_truncated > quantile(L_mean_Radio, probs = 0.85)] <- quantile(L_mean_Radio, probs = 0.85)
+L_mean_Radio_truncated[L_mean_Radio_truncated < quantile(L_mean_Radio, probs = 0.15)] <- quantile(L_mean_Radio, probs = 0.15)
 
 L_mean_Soft_truncated <- L_mean_Soft
-L_mean_Soft_truncated[L_mean_Soft_truncated > 43.5] <- 43.5
-L_mean_Soft_truncated[L_mean_Soft_truncated < 37.5] <- 37.5
+L_mean_Soft_truncated[L_mean_Soft_truncated > quantile(L_mean_Soft, probs = 0.85)] <- quantile(L_mean_Soft, probs = 0.85)
+L_mean_Soft_truncated[L_mean_Soft_truncated < quantile(L_mean_Soft, probs = 0.15)] <- quantile(L_mean_Soft, probs = 0.15)
 
 L_mean_Hard_truncated <- L_mean_Hard
-L_mean_Hard_truncated[L_mean_Hard_truncated > 43.5] <- 43.5
-L_mean_Hard_truncated[L_mean_Hard_truncated < 37.5] <- 37.5
+L_mean_Hard_truncated[L_mean_Hard_truncated > quantile(L_mean_Hard, probs = 0.85)] <- quantile(L_mean_Hard, probs = 0.85)
+L_mean_Hard_truncated[L_mean_Hard_truncated < quantile(L_mean_Hard, probs = 0.15)] <- quantile(L_mean_Hard, probs = 0.15)
 
 
 # Los colores van más a su bola, así que aplicamos un criterio de percentiles para cada uno de ellos:
@@ -513,149 +513,229 @@ colorIR_truncated <- colorIR_mean
 colorIR_truncated[colorIR_truncated > quantile(colorIR_mean, probs = 0.85)] <- quantile(colorIR_mean, probs = 0.85)
 colorIR_truncated[colorIR_truncated < quantile(colorIR_mean, probs = 0.15)] <- quantile(colorIR_mean, probs = 0.15)
 
-color_W2_W1_truncated <- color_W2_W1_mean
-color_W2_W1_truncated[color_W2_W1_truncated > quantile(color_W2_W1_mean, probs = 0.85)] <- quantile(color_W2_W1_mean, probs = 0.85)
-color_W2_W1_truncated[color_W2_W1_truncated < quantile(color_W2_W1_mean, probs = 0.15)] <- quantile(color_W2_W1_mean, probs = 0.15)
-
 q24_truncated <- q24_mean
 q24_truncated[q24_truncated > quantile(q24_mean, probs = 0.85)] <- quantile(q24_mean, probs = 0.85)
 q24_truncated[q24_truncated < quantile(q24_mean, probs = 0.15)] <- quantile(q24_mean, probs = 0.15)
+
+color_W2_W1_truncated <- color_W2_W1_mean
+color_W2_W1_truncated[color_W2_W1_truncated > quantile(color_W2_W1_mean, probs = 0.85)] <- quantile(color_W2_W1_mean, probs = 0.85)
+color_W2_W1_truncated[color_W2_W1_truncated < quantile(color_W2_W1_mean, probs = 0.15)] <- quantile(color_W2_W1_mean, probs = 0.15)
 
 color_Radio_IR_truncated <- color_Radio_IR_mean
 color_Radio_IR_truncated[color_Radio_IR_truncated > quantile(color_Radio_IR_mean, probs = 0.85)] <- quantile(color_Radio_IR_mean, probs = 0.85)
 color_Radio_IR_truncated[color_Radio_IR_truncated < quantile(color_Radio_IR_mean, probs = 0.15)] <- quantile(color_Radio_IR_mean, probs = 0.15)
 
 
-colorX_truncated <- colorX_mean
-colorX_truncated[colorX_truncated > quantile(colorX_mean, probs = 0.85)] <- quantile(colorX_mean, probs = 0.85)
-colorX_truncated[colorX_truncated < quantile(colorX_mean, probs = 0.15)] <- quantile(colorX_mean, probs = 0.15)
+# colorX_truncated <- colorX_mean
+# colorX_truncated[colorX_truncated > quantile(colorX_mean, probs = 0.85)] <- quantile(colorX_mean, probs = 0.85)
+# colorX_truncated[colorX_truncated < quantile(colorX_mean, probs = 0.15)] <- quantile(colorX_mean, probs = 0.15)
 
+colorX_truncated <- colorX_mean
+colorX_truncated[colorX_truncated > quantile(na.omit(color_X), probs = 0.85)] <- quantile(na.omit(color_X), probs = 0.85)
+colorX_truncated[colorX_truncated < quantile(na.omit(color_X), probs = 0.15)] <- quantile(na.omit(color_X), probs = 0.15)
 
 # Para las dispersiones acotamos el rango dinámico al intervalo (0.1 - 1):
 
 Dispersion_IR_truncated <- Dispersion_IR
-Dispersion_IR_truncated[Dispersion_IR_truncated > 1] <- 1
-Dispersion_IR_truncated[Dispersion_IR_truncated < 0.1] <- 0.1
+Dispersion_IR_truncated[Dispersion_IR_truncated > 
+                          (quantile(Dispersion_IR, probs = 0.85) - quantile(Dispersion_IR, probs = 0.15))/2] = 
+  (quantile(Dispersion_IR, probs = 0.85) - quantile(Dispersion_IR, probs = 0.15))/2
+Dispersion_IR_truncated[Dispersion_IR_truncated < 0] = 0
 
 Dispersion_Radio_truncated <- Dispersion_Radio
-Dispersion_Radio_truncated[Dispersion_Radio_truncated > 1] <- 1
-Dispersion_Radio_truncated[Dispersion_Radio_truncated < 0.1] <- 0.1
+Dispersion_Radio_truncated[Dispersion_Radio_truncated > 
+                             (quantile(Dispersion_Radio, probs = 0.85) - quantile(Dispersion_Radio, probs = 0.15))/2] =
+  (quantile(Dispersion_Radio, probs = 0.85) - quantile(Dispersion_Radio, probs = 0.15))/2
+Dispersion_Radio_truncated[Dispersion_Radio_truncated < 0] = 0
 
 Dispersion_Soft_truncated <- Dispersion_Soft
-Dispersion_Soft_truncated[Dispersion_Soft_truncated > 1] <- 1
-Dispersion_Soft_truncated[Dispersion_Soft_truncated < 0.1] <- 0.1
+Dispersion_Soft_truncated[Dispersion_Soft_truncated > 
+                            (quantile(Dispersion_Soft, probs = 0.85) - quantile(Dispersion_Soft, probs = 0.15))/2] =
+  (quantile(Dispersion_Soft, probs = 0.85) - quantile(Dispersion_Soft, probs = 0.15))/2
+Dispersion_Soft_truncated[Dispersion_Soft_truncated < 0] = 0
 
 Dispersion_Hard_truncated <- Dispersion_Hard
-Dispersion_Hard_truncated[Dispersion_Hard_truncated > 1] <- 1
-Dispersion_Hard_truncated[Dispersion_Hard_truncated < 0.1] <- 0.1
+Dispersion_Hard_truncated[Dispersion_Hard_truncated > 
+                            (quantile(Dispersion_Hard, probs = 0.85) - quantile(Dispersion_Hard, probs = 0.15))/2] =
+  (quantile(Dispersion_Hard, probs = 0.85) - quantile(Dispersion_Hard, probs = 0.15))/2
+Dispersion_Hard_truncated[Dispersion_Hard_truncated < 0] = 0
 
 Dispersion_IR1_truncated <- Dispersion_IR1
-Dispersion_IR1_truncated[Dispersion_IR1_truncated > 1] <- 1
-Dispersion_IR1_truncated[Dispersion_IR1_truncated < 0.1] <- 0.1
+Dispersion_IR1_truncated[Dispersion_IR1_truncated > 
+                           (quantile(Dispersion_IR1, probs = 0.85) - quantile(Dispersion_IR1, probs = 0.15))/2] =
+  (quantile(Dispersion_IR1, probs = 0.85) - quantile(Dispersion_IR1, probs = 0.15))/2
+Dispersion_IR1_truncated[Dispersion_IR1_truncated < 0] <- 0
 
 Dispersion_IR2_truncated <- Dispersion_IR2
-Dispersion_IR2_truncated[Dispersion_IR2_truncated > 1] <- 1
-Dispersion_IR2_truncated[Dispersion_IR2_truncated < 0.1] <- 0.1
+Dispersion_IR2_truncated[Dispersion_IR2_truncated > 
+                           (quantile(Dispersion_IR2, probs = 0.85) - quantile(Dispersion_IR2, probs = 0.15))/2] =
+  (quantile(Dispersion_IR2, probs = 0.85) - quantile(Dispersion_IR2, probs = 0.15))/2
+Dispersion_IR2_truncated[Dispersion_IR2_truncated < 0] <- 0
 
-Dispersion_colorIR_truncated <- Dispersion_colorIR
-Dispersion_colorIR_truncated[Dispersion_colorIR_truncated > quantile(Dispersion_colorIR, probs = 0.85)] <- quantile(Dispersion_colorIR, probs = 0.85)
-Dispersion_colorIR_truncated[Dispersion_colorIR_truncated < quantile(Dispersion_colorIR, probs = 0.15)] <- quantile(Dispersion_colorIR, probs = 0.15)
+# Dispersion_colorIR_truncated <- Dispersion_colorIR
+# Dispersion_colorIR_truncated[Dispersion_colorIR_truncated > 
+#                                (quantile(Dispersion_color_W2_W1, probs = 0.85) - quantile(Dispersion_color_W2_W1, probs = 0.15))/2] =
+#   quantile(Dispersion_color_W2_W1, probs = 0.85)
+# Dispersion_colorIR_truncated[Dispersion_colorIR_truncated < 0] = 0
+# 
+# Dispersion_q24_truncated <- Dispersion_q24
+# Dispersion_q24_truncated[Dispersion_q24_truncated > 
+#                            (quantile(Dispersion_q24, probs = 0.85) - quantile(Dispersion_q24, probs = 0.15))/2] =
+#   (quantile(Dispersion_q24, probs = 0.85) - quantile(Dispersion_q24, probs = 0.15))/2
+# Dispersion_q24_truncated[Dispersion_q24_truncated < 0] <- 0
 
 Dispersion_color_W2_W1_truncated <- Dispersion_color_W2_W1
-Dispersion_color_W2_W1_truncated[Dispersion_color_W2_W1_truncated > quantile(Dispersion_color_W2_W1, probs = 0.85)] <- quantile(Dispersion_color_W2_W1, probs = 0.85)
-Dispersion_color_W2_W1_truncated[Dispersion_color_W2_W1_truncated < quantile(Dispersion_color_W2_W1, probs = 0.15)] <- quantile(Dispersion_color_W2_W1, probs = 0.15)
-
-Dispersion_q24_truncated <- Dispersion_q24
-Dispersion_q24_truncated[Dispersion_q24_truncated > quantile(Dispersion_q24, probs = 0.85)] <- quantile(Dispersion_q24, probs = 0.85)
-Dispersion_q24_truncated[Dispersion_q24_truncated < quantile(Dispersion_q24, probs = 0.15)] <- quantile(Dispersion_q24, probs = 0.15)
+Dispersion_color_W2_W1_truncated[Dispersion_color_W2_W1_truncated >
+                                   (quantile(Dispersion_, probs = 0.85) - quantile(Dispersion_Radio, probs = 0.15))/2] =
+  quantile(Dispersion_color_W2_W1, probs = 0.85)
+Dispersion_color_W2_W1_truncated[Dispersion_color_W2_W1_truncated < 0] = 0
 
 Dispersion_color_Radio_IR_truncated <- Dispersion_color_Radio_IR
-Dispersion_color_Radio_IR_truncated[Dispersion_color_Radio_IR_truncated > quantile(Dispersion_color_Radio_IR, probs = 0.85)] <- quantile(Dispersion_color_Radio_IR, probs = 0.85)
-Dispersion_color_Radio_IR_truncated[Dispersion_color_Radio_IR_truncated < quantile(Dispersion_color_Radio_IR, probs = 0.15)] <- quantile(Dispersion_color_Radio_IR, probs = 0.15)
+Dispersion_color_Radio_IR_truncated[Dispersion_color_Radio_IR_truncated > 
+                                      (quantile(Dispersion_color_Radio_IR, probs = 0.85) - quantile(Dispersion_color_Radio_IR, probs = 0.15))/2] = 
+  (quantile(Dispersion_color_Radio_IR, probs = 0.85) - quantile(Dispersion_color_Radio_IR, probs = 0.15))/2
+Dispersion_color_Radio_IR_truncated[Dispersion_color_Radio_IR_truncated < 0] <- 0
 
 Dispersion_colorX_truncated <- Dispersion_colorX
-Dispersion_colorX_truncated[Dispersion_colorX_truncated > quantile(Dispersion_colorX, probs = 0.85)] <- quantile(Dispersion_colorX, probs = 0.85)
-Dispersion_colorX_truncated[Dispersion_colorX_truncated < quantile(Dispersion_colorX, probs = 0.15)] <- quantile(Dispersion_colorX, probs = 0.15)
+Dispersion_colorX_truncated[Dispersion_colorX_truncated > 
+                              (quantile(Dispersion_colorX, probs = 0.85) - quantile(Dispersion_colorX, probs = 0.15))/2] =
+  (quantile(Dispersion_colorX, probs = 0.85) - quantile(Dispersion_colorX, probs = 0.15))/2
+Dispersion_colorX_truncated[Dispersion_colorX_truncated < 0] <- 0
 
 
 
 ############ HISTOGRAMAS 2D DE LOS NUEVOS <L> Y <COLOR> Y DE SUS RESPECTIVAS DISPERSIONES ################
 
-image.plot(SFR_X, M_y, L_mean_IR_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+
+
+image.plot(SFR_X, M_y, L_mean_IR, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W4 band')
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, L_mean_IR1_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, L_mean_IR1_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W1 band')
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, L_mean_IR2_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, L_mean_IR2_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W2 band')
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, L_mean_Radio_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, L_mean_Radio_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Radio')
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, L_mean_Soft_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, L_mean_Soft_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Soft X-Rays')
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, L_mean_Hard_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, L_mean_Hard_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Hard X-Rays')
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, colorIR_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
-           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <W1-W2>')
+# image.plot(SFR_X, M_y, colorIR_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+#            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <W1-W2>')
+# 
+# image.plot(SFR_X, M_y, q24_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+#            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <q24>')
 
-image.plot(SFR_X, M_y, q24_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
-           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <q24>')
-
-image.plot(SFR_X, M_y, color_W2_W1_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, color_W2_W1_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <IR color>')
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, color_Radio_IR_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, color_Radio_IR_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <Radio-IR(W4) color>')
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, colorX_truncated, col = viridis(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, colorX_truncated, col = matlab.like(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <X-Rays color>')
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .95), add = TRUE, lty = 2)
 
 
 
-
-image.plot(SFR_X, M_y, Dispersion_IR_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_IR_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W4 band)')
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_IR, levels = quantile(densidad_IR, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_Radio_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_Radio_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Radio')
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Radio, levels = quantile(densidad_Radio, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_Soft_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_Soft_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Soft X-Rays')
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Soft, levels = quantile(densidad_Soft, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_Hard_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_Hard_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Hard X-Rays')
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_Hard, levels = quantile(densidad_Hard, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_IR1_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_IR1_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W1 band)')
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W1, levels = quantile(densidad_W1, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_IR2_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_IR2_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W2 band)')
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_W2, levels = quantile(densidad_W2, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_colorIR_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
-           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion W1-W2')
+# image.plot(SFR_X, M_y, Dispersion_colorIR_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+#            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion W1-W2')
+# 
+# image.plot(SFR_X, M_y, Dispersion_q24_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+#            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion q24')
 
-image.plot(SFR_X, M_y, Dispersion_q24_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
-           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion q24')
-
-image.plot(SFR_X, M_y, Dispersion_color_W2_W1_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_color_W2_W1_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR color')
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_W2_W1, levels = quantile(densidad_color_W2_W1, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_color_Radio_IR_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+image.plot(SFR_X, M_y, Dispersion_color_Radio_IR_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
            ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Radio-IR(W4) color')
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_color_Radio_IR, levels = quantile(densidad_color_Radio_IR, probs = .95), add = TRUE, lty = 2)
 
-image.plot(SFR_X, M_y, Dispersion_colorX_truncated, col = matlab.like(1000), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
-           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion colorX')
-
+image.plot(SFR_X, M_y, Dispersion_colorX_truncated, col = viridis(15), xlim = c(-3, 1.5), ylim = c(8.5, 11.5),
+           ylab = 'log[M* (solar masses)]', xlab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion X-Rays color')
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .50), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .75), add = TRUE, lty = 2)
+contour(SFR_X, M_y, densidad_colorX, levels = quantile(densidad_colorX, probs = .95), add = TRUE, lty = 2)
 
 ############ CÁLCULO DE LOS LUMINOSIDADES Y COLORES MEDIOS Y DE SUS EXCESOS ############
 
 L_media_soft <- rep(0, len)
 L_media_hard <- rep(0, len)
 L_media_radio <- rep(0, len)
+
 L_media_ir <- rep(0, len)
 L_media_ir1 <- rep(0, len)
 L_media_ir2 <- rep(0, len)
@@ -1904,44 +1984,95 @@ for (i in 1:len){
   Sparse[X[i], IR[i], R[i]] = Sparse[X[i], IR[i], R[i]] + 1
 }
 
+################################## ACTIVENESS PLOTS #####################################
 
-################################################################################################################
+sigmas = function(lum){
+  
+  x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
+  ranking = c(1:length(x_ordenado))
+  ranking_interp = approxfun(x_ordenado, ranking)
+  N = length(x_ordenado)
+  z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
+  N_greater = N - ranking_interp(z)
+  N_normal = rep(0, length(N_greater))
+  pivot_point = median(x_ordenado)
+  # pivot_point = moda_color_W2_W1_red
+  for (i in 1:length(z)){
+    if (z[i] <= pivot_point){
+      N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+    }
+    else {
+      N_symmetric = ranking_interp(pivot_point - z[i])
+    }
+    N_normal[i] = min(N_symmetric, N_greater[i])
+  }
+  
+  N_active = N_greater - N_normal
+  f_active = N_active/N_greater
+  z_active = z[min(which(f_active >= 0.5))]
+  n_sigmas = (z_active - quantile(na.omit(lum), probs = 0.50))/
+    (quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16))
+  return(as.numeric(n_sigmas))
+}
 
 
-# x_color_IR_ordenado = na.omit(sort.int(color_W2_W1_reducido, na.last = TRUE, index.return = TRUE)$x)
-# 
-# ranking_color_IR = c(1:length(x_color_IR_ordenado))
-# 
-# ranking_color_IR_interp = approxfun(x_color_IR_ordenado, ranking_color_IR)
-# # ranking_color_IR_interp <- ranking_color_IR_interp(x_color_IR_ordenado)
-# 
-# activeness <- function(x, z){
-#   x_ordenado = na.omit(sort.int(x, na.last = TRUE, index.return = TRUE)$x)
-#   ranking = c(1:length(x_ordenado))
-#   ranking_interp = approxfun(x_ordenado, ranking)
-#   N = length(x_ordenado)
-#   N_greater = ceiling(N - ranking_interp(z))
-#   N_normal = rep(0, length(N_greater))
-#   for (i in 1:length(z)){
-#     if (z[i] <= 0){
-#       N_normal[i] = ceiling(2*ranking_interp(0) - ranking_interp(z[i]))
-#     }
-#     else {
-#       N_normal[i] = ceiling(ranking_interp(-z[i]))
-#     }
-#   }
-#   N_active = N_greater - N_normal
-#   
-#   for (i in 1:length(N_active)){
-#     if (N_active[i] < 0){
-#       #N_normal[i] = N_normal[i] + N_active[i]
-#       N_active[i] = 0
-#     }
-#   }
-#   purity = N_active/N_greater
-#   output = c(N_active, N_normal, purity)
-#   return(output)
-# }
+sigma_minima = min(sigmas(L_reducida_IR2), sigmas(L_reducida_Radio), sigmas(L_reducida_Hard),
+                   sigmas(color_W2_W1_reducido), sigmas(color_Radio_IR_reducido), sigmas(color_X_reducido))
+
+sigma_maxima = max(sigmas(L_reducida_IR2), sigmas(L_reducida_Radio), sigmas(L_reducida_Hard),
+                   sigmas(color_W2_W1_reducido), sigmas(color_Radio_IR_reducido), sigmas(color_X_reducido))
+
+
+activeness = function(lum, xlabel, colour){
+  
+  x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
+  ranking = c(1:length(x_ordenado))
+  ranking_interp = approxfun(x_ordenado, ranking)
+  N = length(x_ordenado)
+  z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
+  N_greater = N - ranking_interp(z)
+  N_normal = rep(0, length(N_greater))
+  pivot_point = median(x_ordenado)
+  # pivot_point = moda_color_W2_W1_red
+  for (i in 1:length(z)){
+    if (z[i] <= pivot_point){
+      N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+    }
+    else {
+      N_symmetric = ranking_interp(pivot_point - z[i])
+    }
+    N_normal[i] = min(N_symmetric, N_greater[i])
+  }
+  
+  N_active = N_greater - N_normal
+  f_active = N_active/N_greater
+  z_active = z[min(which(f_active >= 0.5))]
+  minimo = sigma_minima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
+    quantile(na.omit(lum), probs = 0.50)
+  maximo = sigma_maxima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
+    quantile(na.omit(lum), probs = 0.50)
+  
+  library(ggplot2)
+  df = data.frame(z, log10(N_normal))
+  df2 = data.frame(z, log10(N_greater))
+  print(ggplot(df, aes(x = df$z)) +
+          ylim(0, max(na.omit(log10(N_greater)))) +
+      geom_line(aes(y = df$log10.N_normal.), color = colour, linetype = 'dashed') +
+      geom_line(aes(y = df2$log10.N_greater.), color = 'black') +
+      geom_rect(aes(xmin = minimo, xmax = maximo, ymin = -Inf, ymax = Inf), color = 'grey', alpha = 0.005) +
+      theme_bw() + 
+      xlab(xlabel) + 
+      ylab('log (N > x)'))
+  return(z_active)
+}
+
+activeness(L_reducida_IR2, 'Luminosity excess (IR W2 band)', 'red')
+activeness(L_reducida_Radio, 'Luminosity excess (Radio)', 'green')
+activeness(L_reducida_Hard, 'Luminosity excess (Hard X-Rays)', 'blue')
+
+activeness(color_W2_W1_reducido, 'IR color excess', 'red')
+activeness(color_Radio_IR_reducido, 'Radio-IR color excess', 'green')
+activeness(color_X_reducido, 'X-Rays color excess', 'blue')
 
 
 

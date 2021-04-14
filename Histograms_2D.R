@@ -765,6 +765,7 @@ activeness(color_X_reducido, 'X-Rays color excess', 'blue')
 
 threshold_colorIR_lit = 0.4*0.8 + W1_W2_norm
 threshold_color_Radio_IR_lit = 0.23 + nuradio_nu24
+threshold_Radio_lit = 40
 threshold_colorX_lit = log10(7)
 
 threshold_ir2_excess = as.numeric(activeness(L_reducida_IR2, 'Luminosity excess (IR W2 band)', 'red'))
@@ -900,8 +901,72 @@ plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.
 # mtext("HR", side = 4, col = "black", line = 2) 
 # axis(1, pretty(range(L_Hard)))
 # mtext("log[L (Hard X-Rays)]", side=1, col="black", line = 2.5)
+IR_active = 0
+IR_Stern = 0
+IR_both = 0
+
+for (i in 1:len){
+  if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i] & color_W2_W1[i]) == FALSE)){
+    if ((L_reducida_IR2[i] > threshold_ir2_excess) & (color_W2_W1_reducido[i] > threshold_colorIR_excess)){
+      IR_active = IR_active + 1
+      if (color_W2_W1[i] > threshold_colorIR_lit){
+        IR_both = IR_both + 1
+      }
+    }
+    if (color_W2_W1[i] > threshold_colorIR_lit){
+      IR_Stern = IR_Stern + 1
+    }
+  }
+}
 
 
+Radio_active = 0
+Radio_Ibar = 0
+Radio_40 = 0
+Radio_active_Ibar = 0
+Radio_active_40 = 0
+Radio_Ibar_40 = 0
+
+for (i in 1:len){
+  if (is.na(L_reducida_Radio[i] & color_Radio_IR[i] & L_Radio[i] & color_Radio_IR[i]) == FALSE){
+    if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
+      Radio_active = Radio_active + 1
+      if (color_Radio_IR[i] > threshold_color_Radio_IR_lit){
+        Radio_active_Ibar = Radio_active_Ibar + 1
+      }
+      if (L_Radio[i] > threshold_Radio_lit){
+        Radio_active_40 = Radio_active_40 + 1
+      }
+    }
+    if ((color_Radio_IR[i] > threshold_color_Radio_IR_lit)){
+      Radio_Ibar = Radio_Ibar + 1
+      if ((L_Radio[i] > threshold_radio_excess)){
+        Radio_Ibar_40 = Radio_Ibar_40 + 1
+      }
+    }
+    if ((L_Radio[i] > threshold_radio_excess)){
+      Radio_40 = Radio_40 + 1
+    }
+  }
+}
+
+X_active = 0
+X_42 = 0
+X_both = 0
+
+for (i in 1:len){
+  if ((is.na(L_reducida_Hard[i] & color_X_reducido[i] & color_X[i]) == FALSE)){
+    if ((L_reducida_Hard[i] > threshold_hard_excess) & (color_X_reducido[i] > threshold_colorX_excess)){
+      X_active = X_active + 1
+      if (color_X[i] > threshold_colorX_lit){
+        X_both = X_both + 1
+      }
+    }
+    if (color_X[i] > threshold_colorX_lit){
+      X_42 = X_42 + 1
+    }
+  }
+}
 ######################################  Sparse Matrix  #########################################
 
 

@@ -85,6 +85,9 @@ for (i in 1:len){
     color_Radio_IR[i] <- NA
     color_X[i] <- NA
     
+    color_IR[i] <- NA
+    q_24[i] <- NA
+    
   }
   else if ((is.na(Delta_M[i]) == FALSE & Delta_M[i] > 2) | (is.na(Delta_SFR[i]) == FALSE & Delta_SFR[i] > 2)){ 
     
@@ -103,6 +106,9 @@ for (i in 1:len){
     color_Radio_IR[i] <- NA
     color_X[i] <- NA
     
+    color_IR[i] <- NA
+    q_24[i] <- NA
+    
   }
   if (redshift[i] < 0.01){
     
@@ -120,6 +126,9 @@ for (i in 1:len){
     color_W2_W1[i] <- NA
     color_Radio_IR[i] <- NA
     color_X[i] <- NA
+    
+    color_IR[i] <- NA
+    q_24[i] <- NA
     
   }
 }
@@ -448,9 +457,52 @@ contours_Radio = get_isocontour_levels(out_Radio$Density, d_M, d_SFR)
 contours_Soft = get_isocontour_levels(out_Soft$Density, d_M, d_SFR)
 contours_Hard = get_isocontour_levels(out_Hard$Density, d_M, d_SFR)
 
-contours_color_w2_w1 = get_isocontour_levels(out_color_W2_W1$Density, d_M, d_SFR)
+contours_color_W2_W1 = get_isocontour_levels(out_color_W2_W1$Density, d_M, d_SFR)
 contours_color_Radio_IR = get_isocontour_levels(out_color_Radio_IR$Density, d_M, d_SFR)
 contours_color_X = get_isocontour_levels(out_color_X$Density, d_M, d_SFR)
+
+
+
+############ HISTOGRAMAS 2D DE LOS NUEVOS <L> Y <COLOR> Y DE SUS RESPECTIVAS DISPERSIONES ################
+
+get_plots = function(L, contours, title){
+  
+  image.plot(M_X, SFR_y, L, col = matlab.like(15), ylim = c(-2, 1), xlim = c(8.5, 11.5),
+             xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = title)
+  contour(M_X, SFR_y, contours, levels = .9, add = TRUE, lty = 3)
+  contour(M_X, SFR_y, contours, levels = .5, add = TRUE, lty = 2)
+  contour(M_X, SFR_y, contours, levels = .1, add = TRUE, lty = 1)
+  
+}
+
+plot_Radio = get_plots(out_Radio$L_mean, contours_Radio, '<L> Radio')
+plot_Radio_disp = get_plots(out_Radio$Dispersion, contours_Radio, 'Dispersion Radio')
+
+plot_IR = get_plots(out_IR$L_mean, contours_IR4, '<L> IR (W4 band)')
+plot_IR_disp = get_plots(out_IR$Dispersion, contours_IR4, 'Dispersion IR (W4 band)')
+
+plot_IR1 = get_plots(out_IR1$L_mean, contours_IR1, '<L> IR (W1 band)')
+plot_IR1_disp = get_plots(out_IR1$Dispersion, contours_IR1, 'Dispersion IR (W1 band)')
+
+plot_IR2 = get_plots(out_IR2$L_mean, contours_IR2, '<L> IR (W2 band)')
+plot_IR2_disp = get_plots(out_IR2$Dispersion, contours_IR2, 'Dispersion IR (W2 band)')
+
+plot_Soft = get_plots(out_Soft$L_mean, contours_Soft, '<L> Soft X-Rays')
+plot_Soft_disp = get_plots(out_Soft$Dispersion, contours_Soft, 'Dispersion Soft X-Rays')
+
+plot_Hard = get_plots(out_Hard$L_mean, contours_Hard, '<L> Hard X-Rays')
+plot_Hard_disp = get_plots(out_Hard$Dispersion, contours_Hard, 'Dispersion Hard X-Rays')
+
+
+
+plot_color_W2_W1 = get_plots(out_color_W2_W1$color_mean, contours_color_W2_W1, '<IR color>')
+plot_color_W2_W1_disp = get_plots(out_color_W2_W1$Dispersion, contours_color_W2_W1, 'Dispersion IR color')
+
+plot_color_Radio_IR = get_plots(out_color_Radio_IR$color_mean, contours_color_Radio_IR, '<Radio - IR (W4 band) color>')
+plot_color_Radio_IR_disp = get_plots(out_color_Radio_IR$Dispersion, contours_color_Radio_IR, 'Dispersion Radio - IR(W4) color')
+
+plot_color_X = get_plots(out_color_X$color_mean, contours_color_X, '<X-Rays color>')
+plot_color_X_disp = get_plots(out_color_X$Dispersion, contours_color_X, 'Dispersion X-Rays color')
 
 
 ##########################   REMOVE EXTREME MASSES AND SFRs   ####################################
@@ -471,126 +523,12 @@ for (i in 1:len){
       color_Radio_IR[i] <- NA
       color_X[i] <- NA
       
+      color_IR[i] <- NA
+      q_24[i] <- NA
+      
     }
   }
 }
-
-
-############ HISTOGRAMAS 2D DE LOS NUEVOS <L> Y <COLOR> Y DE SUS RESPECTIVAS DISPERSIONES ################
-
-
-image.plot(M_X, SFR_y, L_mean_IR_truncated, col = matlab.like(15), ylim = c(-2, 1), xlim = c(8, 11),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W4 band')
-contour(M_X, SFR_y, get_IR4, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR4, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR4, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, L_mean_IR1_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W1 band')
-contour(M_X, SFR_y, get_IR1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR1, levels = .1, add = TRUE, lty = 1)
-abline(a = -11, b = 1, lty = 3, lwd = 0.5)
-
-image.plot(M_X, SFR_y, L_mean_IR2_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> IR W2 band')
-contour(M_X, SFR_y, get_IR2, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR2, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR2, levels = .1, add = TRUE, lty = 1)
-abline(a = -11, b = 1, lty = 3, lwd = 0.5)
-
-image.plot(M_X, SFR_y, L_mean_Radio_truncated, col = matlab.like(15), ylim = c(-2, 1), xlim = c(8, 11),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Radio')
-contour(M_X, SFR_y, get_Radio, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Radio, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Radio, levels = .1, add = TRUE, lty = 1)
-abline(a = -11, b = 1, lty = 3, lwd = 0.5)
-
-image.plot(M_X, SFR_y, L_mean_Soft_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Soft X-Rays')
-contour(M_X, SFR_y, get_Soft, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Soft, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Soft, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, L_mean_Hard_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <L> Hard X-Rays')
-contour(M_X, SFR_y, get_Hard, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Hard, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Hard, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, color_W2_W1_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <IR color>')
-contour(M_X, SFR_y, get_color_w2_w1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, color_Radio_IR_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <Radio-IR(W4) color>')
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, colorX_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: <X-Rays color>')
-contour(M_X, SFR_y, get_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
-
-
-
-image.plot(M_X, SFR_y, Dispersion_IR_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W4 band)')
-contour(M_X, SFR_y, get_IR4, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR4, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR4, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_Radio_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Radio')
-contour(M_X, SFR_y, get_Radio, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Radio, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Radio, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_Soft_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Soft X-Rays')
-contour(M_X, SFR_y, get_Soft, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Soft, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Soft, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_Hard_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Hard X-Rays')
-contour(M_X, SFR_y, get_Hard, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_Hard, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_Hard, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_IR1_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W1 band)')
-contour(M_X, SFR_y, get_IR1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR1, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_IR2_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR (W2 band)')
-contour(M_X, SFR_y, get_IR2, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_IR2, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_IR2, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_color_W2_W1_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion IR color')
-contour(M_X, SFR_y, get_color_w2_w1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_color_Radio_IR_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion Radio-IR(W4) color')
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
-
-image.plot(M_X, SFR_y, Dispersion_colorX_truncated, col = matlab.like(15), ylim = c(-3, 1.5), xlim = c(8.5, 11.5),
-           xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = 'Histogram 2D: Dispersion X-Rays color')
-contour(M_X, SFR_y, get_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
 
 
 ############ CÁLCULO DE LOS LUMINOSIDADES Y COLORES MEDIOS Y DE SUS EXCESOS ############
@@ -641,25 +579,25 @@ L_mean_vector <- function(L, L_media, L_mean){
 }
 
 
-L_media_soft <- L_mean_vector(L = L_Soft, L_media = L_media_soft, L_mean = L_mean_Soft)
-L_media_hard <- L_mean_vector(L = L_Hard, L_media = L_media_hard, L_mean = L_mean_Hard)
-L_media_radio <- L_mean_vector(L = L_Radio, L_media = L_media_radio, L_mean = L_mean_Radio)
-L_media_ir <- L_mean_vector(L = L_IR, L_media = L_media_ir, L_mean = L_mean_IR)
-L_media_ir1 <- L_mean_vector(L = L_IR1, L_media = L_media_ir1, L_mean = L_mean_IR1)
-L_media_ir2 <- L_mean_vector(L = L_IR2, L_media = L_media_ir2, L_mean = L_mean_IR2)
-color_W2_W1_media <- L_mean_vector(L = color_W2_W1, L_media = color_W2_W1_media, L_mean = color_W2_W1_mean)
-color_Radio_IR_media <- L_mean_vector(L = color_Radio_IR, L_media = color_Radio_IR_media, L_mean = color_Radio_IR_mean)
-colorX_media <- L_mean_vector(L = color_X, L_media = colorX_media, L_mean = colorX_mean)
+L_media_soft <- L_mean_vector(L = L_Soft, L_media = L_media_soft, L_mean = out_Soft$L_mean)
+L_media_hard <- L_mean_vector(L = L_Hard, L_media = L_media_hard, L_mean = out_Hard$L_mean)
+L_media_radio <- L_mean_vector(L = L_Radio, L_media = L_media_radio, L_mean = out_Radio$L_mean)
+L_media_ir <- L_mean_vector(L = L_IR, L_media = L_media_ir, L_mean = out_IR$L_mean)
+L_media_ir1 <- L_mean_vector(L = L_IR1, L_media = L_media_ir1, L_mean = out_IR1$L_mean)
+L_media_ir2 <- L_mean_vector(L = L_IR2, L_media = L_media_ir2, L_mean = out_IR2$L_mean)
+color_W2_W1_media <- L_mean_vector(L = color_W2_W1, L_media = color_W2_W1_media, L_mean = out_color_W2_W1$color_mean)
+color_Radio_IR_media <- L_mean_vector(L = color_Radio_IR, L_media = color_Radio_IR_media, L_mean = out_color_Radio_IR$color_mean)
+colorX_media <- L_mean_vector(L = color_X, L_media = colorX_media, L_mean = out_color_X$color_mean)
 
-L_reducida_Soft <- L_Soft - L_media_soft
-L_reducida_Hard <- L_Hard - L_media_hard
-L_reducida_Radio <- L_Radio - L_media_radio
-L_reducida_IR <- L_IR - L_media_ir
-L_reducida_IR1 <- L_IR1 - L_media_ir1
-L_reducida_IR2 <- L_IR2 - L_media_ir2
-color_W2_W1_reducido <- color_W2_W1 - color_W2_W1_media
-color_Radio_IR_reducido <- color_Radio_IR - color_Radio_IR_media
-color_X_reducido <- color_X - colorX_media
+L_excess_Soft <- L_Soft - L_media_soft
+L_excess_Hard <- L_Hard - L_media_hard
+L_excess_Radio <- L_Radio - L_media_radio
+L_excess_IR <- L_IR - L_media_ir
+L_excess_IR1 <- L_IR1 - L_media_ir1
+L_excess_IR2 <- L_IR2 - L_media_ir2
+color_W2_W1_excess <- color_W2_W1 - color_W2_W1_media
+color_Radio_IR_excess <- color_Radio_IR - color_Radio_IR_media
+color_X_excess <- color_X - colorX_media
 
 
 
@@ -700,11 +638,11 @@ sigmas = function(lum){
 }
 
 
-sigma_minima = min(sigmas(L_reducida_IR2), sigmas(L_reducida_Radio), sigmas(L_reducida_Hard),
-                   sigmas(color_W2_W1_reducido), sigmas(color_Radio_IR_reducido), sigmas(color_X_reducido))
+sigma_minima = min(sigmas(L_excess_IR2), sigmas(L_excess_Radio), sigmas(L_excess_Hard),
+                   sigmas(color_W2_W1_excess), sigmas(color_Radio_IR_excess), sigmas(color_X_excess))
 
-sigma_maxima = max(sigmas(L_reducida_IR2), sigmas(L_reducida_Radio), sigmas(L_reducida_Hard),
-                   sigmas(color_W2_W1_reducido), sigmas(color_Radio_IR_reducido), sigmas(color_X_reducido))
+sigma_maxima = max(sigmas(L_excess_IR2), sigmas(L_excess_Radio), sigmas(L_excess_Hard),
+                   sigmas(color_W2_W1_excess), sigmas(color_Radio_IR_excess), sigmas(color_X_excess))
 
 
 activeness = function(lum, xlabel, colour){
@@ -751,13 +689,13 @@ activeness = function(lum, xlabel, colour){
   return(z_active)
 }
 
-activeness(L_reducida_IR2, 'Luminosity excess (IR W2 band)', 'red')
-activeness(L_reducida_Radio, 'Luminosity excess (Radio)', 'green')
-activeness(L_reducida_Hard, 'Luminosity excess (Hard X-Rays)', 'blue')
+activeness(L_excess_IR2, 'Luminosity excess (IR W2 band)', 'red')
+activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green')
+activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue')
 
-activeness(color_W2_W1_reducido, 'IR color excess', 'red')
-activeness(color_Radio_IR_reducido, 'Radio-IR color excess', 'green')
-activeness(color_X_reducido, 'X-Rays color excess', 'blue')
+activeness(color_W2_W1_excess, 'IR color excess', 'red')
+activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green')
+activeness(color_X_excess, 'X-Rays color excess', 'blue')
 
 ############## CÁLCULO DE LOS THRESHOLDS PARA CADA LUMINOSIDAD Y COLOR ################
 
@@ -766,12 +704,12 @@ threshold_color_Radio_IR_lit = 0.23 + nuradio_nu24 # Ibar threshold ---> q_24 < 
 threshold_Radio_lit = 40 # L > 10^40 erg/s ---> Radio-loud AGN
 threshold_colorX_lit = log10(7)
 
-threshold_ir2_excess = as.numeric(activeness(L_reducida_IR2, 'Luminosity excess (IR W2 band)', 'red'))
-threshold_colorIR_excess = as.numeric(activeness(color_W2_W1_reducido, 'IR color excess', 'red'))
-threshold_radio_excess = as.numeric(activeness(L_reducida_Radio, 'Luminosity excess (Radio)', 'green'))
-threshold_color_Radio_IR_excess = as.numeric(activeness(color_Radio_IR_reducido, 'Radio-IR color excess', 'green'))
-threshold_hard_excess = as.numeric(activeness(L_reducida_Hard, 'Luminosity excess (Hard X-Rays)', 'blue'))
-threshold_colorX_excess = as.numeric(activeness(color_X_reducido, 'X-Rays color excess', 'blue'))
+threshold_ir2_excess = as.numeric(activeness(L_excess_IR2, 'Luminosity excess (IR W2 band)', 'red'))
+threshold_colorIR_excess = as.numeric(activeness(color_W2_W1_excess, 'IR color excess', 'red'))
+threshold_radio_excess = as.numeric(activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green'))
+threshold_color_Radio_IR_excess = as.numeric(activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green'))
+threshold_hard_excess = as.numeric(activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue'))
+threshold_colorX_excess = as.numeric(activeness(color_X_excess, 'X-Rays color excess', 'blue'))
 
 
 ################################### FINAL PLOTS ########################################
@@ -808,16 +746,16 @@ galaxy_classification = function(L, color, threshold_L, threshold_color, alpha_v
 
 # Pintamos primero los excesos: exceso de color vs exceso de luminosidad:
 
-galaxy_class_IR = galaxy_classification(L_reducida_IR2, color_W2_W1_reducido,
+galaxy_class_IR = galaxy_classification(L_excess_IR2, color_W2_W1_excess,
                                         threshold_ir2_excess, threshold_colorIR_excess, 0.4)
 
-plot(L_reducida_IR2, color_W2_W1_reducido, col = galaxy_class_IR, pch = 16, ylim = c(-0.5, 1),
+plot(L_excess_IR2, color_W2_W1_excess, col = galaxy_class_IR, pch = 16, ylim = c(-0.5, 1),
      xlab = "IR (W2 band) luminosity excess", ylab = "IR color excess")
 abline(h = threshold_colorIR_excess, lty = 2, lwd = 2)
 abline(v = threshold_ir2_excess, lty = 4, lwd = 2)
 
-data_IR = which(is.na(L_reducida_IR2 & color_W2_W1_reducido)==FALSE)
-plot(M[data_IR], SFR[data_IR], col = galaxy_class_IR[data_IR], pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+data_IR = which(is.na(L_excess_IR2 & color_W2_W1_excess)==FALSE)
+plot(M[data_IR], SFR[data_IR], col = galaxy_class_IR[data_IR], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 
@@ -841,16 +779,16 @@ mtext("log[L (IR W2 band)]", side = 1, col = "black", line = 2.5) # ponemos la e
 
 
 
-galaxy_class_Radio = galaxy_classification(L_reducida_Radio, color_Radio_IR_reducido,
+galaxy_class_Radio = galaxy_classification(L_excess_Radio, color_Radio_IR_excess,
                                            threshold_radio_excess, threshold_color_Radio_IR_excess, 0.3)
 
-plot(L_reducida_Radio, color_Radio_IR_reducido, col = galaxy_class_Radio, pch = 16, xlim = c(-1.5, 3), ylim = c(-2, 3),
+plot(L_excess_Radio, color_Radio_IR_excess, col = galaxy_class_Radio, pch = 16, xlim = c(-1.5, 3), ylim = c(-2, 3),
      xlab = "Radio luminosity excess", ylab = "Radio-IR color excess")
 abline(h = threshold_color_Radio_IR_excess, lty = 2, lwd = 2)
 abline(v = threshold_radio_excess, lty = 4, lwd = 2)
 
-data_Radio = which(is.na(L_reducida_Radio & color_Radio_IR_reducido)==FALSE)
-plot(M[data_Radio], SFR[data_Radio], col = galaxy_class_Radio[data_Radio], pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+data_Radio = which(is.na(L_excess_Radio & color_Radio_IR_excess)==FALSE)
+plot(M[data_Radio], SFR[data_Radio], col = galaxy_class_Radio[data_Radio], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 par(mar = c(5, 4, 4, 4) + 0.1)
@@ -872,16 +810,16 @@ mtext("log[L (Radio)]", side = 1, col = "black", line = 2.5)
 
 
 
-galaxy_class_X = galaxy_classification(L_reducida_Hard, color_X_reducido,
+galaxy_class_X = galaxy_classification(L_excess_Hard, color_X_excess,
                                        threshold_hard_excess, threshold_colorX_excess, 1)
 
-plot(L_reducida_Hard, color_X_reducido, col = galaxy_class_X, pch = 16, ylim = c(-1, 2),
+plot(L_excess_Hard, color_X_excess, col = galaxy_class_X, pch = 16, ylim = c(-1, 2),
      xlab = "Hard X-Rays luminosity excess", ylab = "X-Rays color excess")
 abline(h = threshold_colorX_excess, lty = 2, lwd = 2)
 abline(v = threshold_hard_excess, lty = 4, lwd = 2)
 
-data_X = which(is.na(L_reducida_Hard & color_X_reducido)==FALSE)
-plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+data_X = which(is.na(L_excess_Hard & color_X_excess)==FALSE)
+plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 # par(mar=c(5, 4, 4, 4) + 0.1)
@@ -1064,150 +1002,150 @@ for (i in 1:len){
 
 #IR
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i] & color_W2_W1[i]) == FALSE)){
-    if ((L_reducida_IR2[i] > threshold_ir2_excess) & (color_W2_W1_reducido[i] > threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i] & color_W2_W1[i]) == FALSE)){
+    if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
+      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_w2_w1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i]) == FALSE)){
-    if ((L_reducida_IR2[i] > threshold_ir2_excess) & (color_W2_W1_reducido[i] < threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
+    if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] < threshold_colorIR_excess)){
+      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_w2_w1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i]) == FALSE)){
-    if ((L_reducida_IR2[i] < threshold_ir2_excess) & (color_W2_W1_reducido[i] > threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
+    if ((L_excess_IR2[i] < threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
+      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_w2_w1, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_w2_w1, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
 #RADIO
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Radio[i] & color_Radio_IR_reducido[i]) == FALSE)){
-    if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
+    if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
+      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Radio[i] & color_Radio_IR_reducido[i]) == FALSE)){
-    if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] < threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
+    if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] < threshold_color_Radio_IR_excess)){
+      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Radio[i] & color_Radio_IR_reducido[i]) == FALSE)){
-    if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
+    if ((L_excess_Radio[i] < threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
+      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
 #X-RAYS
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Hard[i] & color_X_reducido[i]) == FALSE)){
-    if ((L_reducida_Hard[i] > threshold_hard_excess) & (color_X_reducido[i] > threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
+    if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
+      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Hard[i] & color_X_reducido[i]) == FALSE)){
-    if ((L_reducida_Hard[i] > threshold_hard_excess) & (color_X_reducido[i] < threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
+    if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] < threshold_colorX_excess)){
+      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_reducida_Hard[i] & color_X_reducido[i]) == FALSE)){
-    if ((L_reducida_Hard[i] < threshold_hard_excess) & (color_X_reducido[i] > threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-3, 1.5),
+  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
+    if ((L_excess_Hard[i] < threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
+      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
     }
   }
 }
-contour(M_X, SFR_y, get_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, get_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
+contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
+contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
+contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
 # library(colorRamps)
 # plot(M, SFR, type = "n", xlim = c(9.5,10.5), ylim = c(1, 3), pch = 16, col = "orange") 
@@ -1221,7 +1159,7 @@ contour(M_X, SFR_y, get_color_X, levels = .1, add = TRUE, lty = 1)
 
 
 
-plot(M, SFR, type = 'n', xlim = c(8.5,11.5), ylim = c(-3,1.5))
+plot(M, SFR, type = 'n', xlim = c(8.5,11.5), ylim = c(-2, 1))
 for(i in 1:len){
   if ((is.na(color_Radio_IR_reducido[i])==FALSE) & (color_Radio_IR[i] > -4.3) & (color_Radio_IR[i] < -3.7)){
     if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] < threshold_color_Radio_IR_excess))

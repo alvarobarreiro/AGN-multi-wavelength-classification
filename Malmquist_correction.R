@@ -329,21 +329,19 @@ V_max_color_Radio_IR = get_Vmax_color(L_Radio, L_IR, sensitivity_Radio, sensitiv
 V_max_color_X = get_Vmax_color(L_Soft, L_Hard, sensitivity_Soft, sensitivity_Hard)
 
 
-suavizado_minimo = 0.1
-
-peso_total <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
-densidad_pesada <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
-densidad_pesada_2 <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
-
-
-
 # Getting densities, averages and dispersions for each luminosity and color:
 
 
 get_outputs = function(V_max, L, sensitivity, peso_total, densidad_pesada, densidad_pesada_2){
   
+  suavizado_minimo = 0.1
+  peso_total <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
+  densidad_pesada <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
+  densidad_pesada_2 <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
+  
   for (p in 1:len){
     L_p = L[p]
+    
     if ((is.na(L_p) == FALSE) & (L_p - 2*log10(redshift[p])) > sensitivity){
       densidad_p = densidad(SFR_i = SFR_grid, M_j = M_grid, SFR_p = SFR[p], M_p = M[p],
                             Delta_SFR_p = suavizado_minimo + Delta_SFR[p], Delta_M_p = suavizado_minimo + Delta_M[p])
@@ -365,6 +363,11 @@ get_outputs = function(V_max, L, sensitivity, peso_total, densidad_pesada, densi
 
 get_color_outputs = function(V_max, L1, L2, color, sensitivity1, sensitivity2,
                                 peso_total, densidad_pesada, densidad_pesada_2){
+  
+  suavizado_minimo = 0.1
+  peso_total <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
+  densidad_pesada <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
+  densidad_pesada_2 <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
   
   for (p in 1:len){
     L1_p = L1[p]
@@ -624,7 +627,7 @@ sigmas = function(lum){
       N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
     }
     else {
-      N_symmetric = ranking_interp(pivot_point - z[i])
+      N_symmetric = ranking_interp(2*pivot_point - z[i])
     }
     N_normal[i] = min(N_symmetric, N_greater[i])
   }
@@ -634,6 +637,7 @@ sigmas = function(lum){
   z_active = z[min(which(f_active >= 0.5))]
   n_sigmas = (z_active - quantile(na.omit(lum), probs = 0.50))/
     (quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16))
+  
   return(as.numeric(n_sigmas))
 }
 
@@ -661,7 +665,7 @@ activeness = function(lum, xlabel, colour){
       N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
     }
     else {
-      N_symmetric = ranking_interp(pivot_point - z[i])
+      N_symmetric = ranking_interp(2*pivot_point - z[i])
     }
     N_normal[i] = min(N_symmetric, N_greater[i])
   }
@@ -686,6 +690,7 @@ activeness = function(lum, xlabel, colour){
           theme_bw() + 
           xlab(xlabel) + 
           ylab('log (N > x)'))
+  
   return(z_active)
 }
 
@@ -747,7 +752,7 @@ galaxy_classification = function(L, color, threshold_L, threshold_color, alpha_v
 # Pintamos primero los excesos: exceso de color vs exceso de luminosidad:
 
 galaxy_class_IR = galaxy_classification(L_excess_IR2, color_W2_W1_excess,
-                                        threshold_ir2_excess, threshold_colorIR_excess, 0.4)
+                                        threshold_ir2_excess, threshold_colorIR_excess, 0.2)
 
 plot(L_excess_IR2, color_W2_W1_excess, col = galaxy_class_IR, pch = 16, ylim = c(-0.5, 1),
      xlab = "IR (W2 band) luminosity excess", ylab = "IR color excess")
@@ -822,6 +827,14 @@ data_X = which(is.na(L_excess_Hard & color_X_excess)==FALSE)
 plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
+
+plot(L_Hard, color_X, col = galaxy_class_X, pch = 16,
+     xlab = "log[L (Hard X-Rays)]", ylab = "X-Rays color", ylim = c(-1.5, 2.5))
+#abline(h = threshold_colorX_lit, lty = 2, lwd = 2)
+abline(v = 42, lty = 4, lwd = 2)
+axis(2, col = "black", las = 0) 
+#mtext("X-Rays color", side = 2, line = 2.5)
+
 # par(mar=c(5, 4, 4, 4) + 0.1)
 # range_color_X = seq(-3,3,1) # elegimos un rango de valores para el X-Rays color
 # range_HR = round(((1/7)*10^range_color_X - 1)/((1/7)*10^range_color_X + 1), 2) # lo pasamos a HR despejando de la ecuación
@@ -831,78 +844,82 @@ plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.
 # mtext("X-Rays color", side = 2, line = 2.5)
 # par(new = TRUE)
 # plot(L_Hard, color_X, pch = 16, col = alpha('blue', 0.1),
-#      main = '', 
+#      main = '',
 #      xlab = '', ylab = '', type = 'n', axes = FALSE)
 # axis(4, labels = range_HR, col = "black", col.axis = "black", las = 0, at = -3:3)
-# mtext("HR", side = 4, col = "black", line = 2) 
+# mtext("HR", side = 4, col = "black", line = 2)
 # axis(1, pretty(range(L_Hard)))
 # mtext("log[L (Hard X-Rays)]", side=1, col="black", line = 2.5)
-IR_active = 0
-IR_Stern = 0
-IR_both = 0
 
-for (i in 1:len){
-  if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i] & color_W2_W1[i]) == FALSE)){
-    if ((L_reducida_IR2[i] > threshold_ir2_excess) & (color_W2_W1_reducido[i] > threshold_colorIR_excess)){
-      IR_active = IR_active + 1
-      if (color_W2_W1[i] > threshold_colorIR_lit){
-        IR_both = IR_both + 1
-      }
-    }
-    if (color_W2_W1[i] > threshold_colorIR_lit){
-      IR_Stern = IR_Stern + 1
-    }
-  }
-}
+# 
+# IR_active = 0
+# IR_Stern = 0
+# IR_both = 0
+# 
+# for (i in 1:len){
+#   if ((is.na(L_reducida_IR2[i] & color_W2_W1_reducido[i] & color_W2_W1[i]) == FALSE)){
+#     if ((L_reducida_IR2[i] > threshold_ir2_excess) & (color_W2_W1_reducido[i] > threshold_colorIR_excess)){
+#       IR_active = IR_active + 1
+#       if (color_W2_W1[i] > threshold_colorIR_lit){
+#         IR_both = IR_both + 1
+#       }
+#     }
+#     if (color_W2_W1[i] > threshold_colorIR_lit){
+#       IR_Stern = IR_Stern + 1
+#     }
+#   }
+# }
+# 
+# 
+# Radio_active = 0
+# Radio_Ibar = 0
+# Radio_40 = 0
+# Radio_active_Ibar = 0
+# Radio_active_40 = 0
+# Radio_Ibar_40 = 0
+# 
+# for (i in 1:len){
+#   if (is.na(L_reducida_Radio[i] & color_Radio_IR[i] & L_Radio[i] & color_Radio_IR[i]) == FALSE){
+#     if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
+#       Radio_active = Radio_active + 1
+#       if (color_Radio_IR[i] > threshold_color_Radio_IR_lit){
+#         Radio_active_Ibar = Radio_active_Ibar + 1
+#       }
+#       if (L_Radio[i] > threshold_Radio_lit){
+#         Radio_active_40 = Radio_active_40 + 1
+#       }
+#     }
+#     if ((color_Radio_IR[i] > threshold_color_Radio_IR_lit)){
+#       Radio_Ibar = Radio_Ibar + 1
+#       if ((L_Radio[i] > threshold_Radio_lit)){
+#         Radio_Ibar_40 = Radio_Ibar_40 + 1
+#       }
+#     }
+#     if ((L_Radio[i] > threshold_Radio_lit)){
+#       Radio_40 = Radio_40 + 1
+#     }
+#   }
+# }
+# 
+# X_active = 0
+# X_42 = 0
+# X_both = 0
+# 
+# for (i in 1:len){
+#   if ((is.na(L_reducida_Hard[i] & color_X_reducido[i] & color_X[i]) == FALSE)){
+#     if ((L_reducida_Hard[i] > threshold_hard_excess) & (color_X_reducido[i] > threshold_colorX_excess)){
+#       X_active = X_active + 1
+#       if (color_X[i] > threshold_colorX_lit){
+#         X_both = X_both + 1
+#       }
+#     }
+#     if (color_X[i] > threshold_colorX_lit){
+#       X_42 = X_42 + 1
+#     }
+#   }
+# }
 
 
-Radio_active = 0
-Radio_Ibar = 0
-Radio_40 = 0
-Radio_active_Ibar = 0
-Radio_active_40 = 0
-Radio_Ibar_40 = 0
-
-for (i in 1:len){
-  if (is.na(L_reducida_Radio[i] & color_Radio_IR[i] & L_Radio[i] & color_Radio_IR[i]) == FALSE){
-    if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
-      Radio_active = Radio_active + 1
-      if (color_Radio_IR[i] > threshold_color_Radio_IR_lit){
-        Radio_active_Ibar = Radio_active_Ibar + 1
-      }
-      if (L_Radio[i] > threshold_Radio_lit){
-        Radio_active_40 = Radio_active_40 + 1
-      }
-    }
-    if ((color_Radio_IR[i] > threshold_color_Radio_IR_lit)){
-      Radio_Ibar = Radio_Ibar + 1
-      if ((L_Radio[i] > threshold_Radio_lit)){
-        Radio_Ibar_40 = Radio_Ibar_40 + 1
-      }
-    }
-    if ((L_Radio[i] > threshold_Radio_lit)){
-      Radio_40 = Radio_40 + 1
-    }
-  }
-}
-
-X_active = 0
-X_42 = 0
-X_both = 0
-
-for (i in 1:len){
-  if ((is.na(L_reducida_Hard[i] & color_X_reducido[i] & color_X[i]) == FALSE)){
-    if ((L_reducida_Hard[i] > threshold_hard_excess) & (color_X_reducido[i] > threshold_colorX_excess)){
-      X_active = X_active + 1
-      if (color_X[i] > threshold_colorX_lit){
-        X_both = X_both + 1
-      }
-    }
-    if (color_X[i] > threshold_colorX_lit){
-      X_42 = X_42 + 1
-    }
-  }
-}
 ######################################  Sparse Matrix  #########################################
 
 
@@ -1000,12 +1017,15 @@ for (i in 1:len){
 
 #######################################################################################################################
 
+
+# Now we'll plot our different galaxy classes separately in the M*-SFR diagram:
+
 #IR
 
 plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
      xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
 for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i] & color_W2_W1[i]) == FALSE)){
+  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
     if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
       points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
              xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
@@ -1147,62 +1167,5 @@ contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
-# library(colorRamps)
-# plot(M, SFR, type = "n", xlim = c(9.5,10.5), ylim = c(1, 3), pch = 16, col = "orange") 
-# matcol<-matlab.like(11)
-# xcol = (L_Hard - min(na.omit(L_Hard)))/(max(na.omit(L_Hard)) - min(na.omit(L_Hard)))*11
-# for (i in 1:len){
-#   if (is.na(L_Hard[i])==FALSE){
-#     points(M[i], SFR[i], pch = 16, col =  matcol[round(xcol[i])])
-#   }
-# }
-
-
-
-plot(M, SFR, type = 'n', xlim = c(8.5,11.5), ylim = c(-2, 1))
-for(i in 1:len){
-  if ((is.na(color_Radio_IR_reducido[i])==FALSE) & (color_Radio_IR[i] > -4.3) & (color_Radio_IR[i] < -3.7)){
-    if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] < threshold_color_Radio_IR_excess))
-      points(M[i], SFR[i], col = alpha('blue', 0.1), pch = 16)
-  }
-}
-
-
-plot(L_Radio, color_Radio_IR, type = 'n')
-for(i in 1:len){
-  if ((is.na(color_Radio_IR_reducido[i])==FALSE)){
-    if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] < threshold_color_Radio_IR_excess))
-      points(L_Radio[i], color_Radio_IR[i], col = alpha('blue', 0.1), pch = 16)
-  }
-}
-
-
-
-plot(L_Radio, color_Radio_IR, type = 'n')
-for(i in 1:len){
-  if ((is.na(color_Radio_IR_reducido[i])==FALSE)){
-    if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess))
-      points(L_Radio[i], color_Radio_IR[i], col = alpha('gold', 0.4), pch = 16)
-  }
-}
-
-
-plot(L_Radio, color_Radio_IR, type = 'n')
-for(i in 1:len){
-  if ((is.na(color_Radio_IR_reducido[i])==FALSE)){
-    if ((L_reducida_Radio[i] > threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess))
-      points(L_Radio[i], color_Radio_IR[i], col = alpha('red4', 0.4), pch = 16)
-  }
-}
-
-
-
-plot(M, color_Radio_IR, type = 'n')
-for(i in 1:len){
-  if ((is.na(color_Radio_IR_reducido[i])==FALSE)){
-    if ((L_reducida_Radio[i] < threshold_radio_excess) & (color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess))
-      points(M[i], color_Radio_IR[i], col = alpha('gold', 0.4), pch = 16)
-  }
-}
 
 

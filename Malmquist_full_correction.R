@@ -290,32 +290,15 @@ densidad <- function(SFR_i, M_j, SFR_p, M_p, Delta_SFR_p, Delta_M_p){
 } 
 
 
-get_Vmax = function(L, sensitivity){
-  z_max = 10^((L - sensitivity)/2) 
-  z_max = ifelse(z_max > 0.01, z_max, 0.01)
-  z_max = ifelse(z_max < 0.07, z_max, 0.07)
-  return(z_max^3)
-}
-
 
 get_Vmax_inverse = function(L, sensitivity){
   z_max = 10^((L - sensitivity)/2) 
+  z_max = apply(z_max, 2, min)
   z_max = ifelse(z_max > 0.01, z_max, 0.01)
   z_max = ifelse(z_max < 0.07, z_max, 0.07)
   return(1/z_max^3)
 }
 
-get_Vmax_color = function(L1, L2, sensitivity1, sensitivity2){
-  z_max1 = 10^((L1 - sensitivity1)/2)
-  z_max2 = 10^((L2 - sensitivity2)/2)
-  z_max = ifelse(z_max1 < z_max2, z_max1, z_max2)
-  z_max = ifelse(z_max > 0.01, z_max, 0.01)
-  z_max = ifelse(z_max < 0.07, z_max, 0.07)
-  return(z_max^3)
-}
-
-# Sensitivity (i.e. flux limit above which we have data for each band): it's been visually estimated from
-# plot(redshift, L - log10(redshift)) for each frequency
 
 sensitivity_Radio = 40.85
 sensitivity_IR = 44.8
@@ -323,23 +306,53 @@ sensitivity_IR1 = 44.6
 sensitivity_IR2 = 44.2
 sensitivity_Soft = 42.8
 sensitivity_Hard = 43.5
+sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
 
-V_max_Radio = get_Vmax(L_Radio, sensitivity_Radio)
-V_max_IR = get_Vmax(L_IR, sensitivity_IR)
-V_max_IR1 = get_Vmax(L_IR1, sensitivity_IR1)
-V_max_IR2 = get_Vmax(L_IR2, sensitivity_IR2)
-V_max_Soft = get_Vmax(L_Soft, sensitivity_Soft)
-V_max_Hard = get_Vmax(L_Hard, sensitivity_Hard)
 
-V_max_color_W2_W1 = get_Vmax_color(L_IR1, L_IR2, sensitivity_IR1, sensitivity_IR2)
-V_max_color_Radio_IR = get_Vmax_color(L_Radio, L_IR, sensitivity_Radio, sensitivity_IR)
-V_max_color_X = get_Vmax_color(L_Soft, L_Hard, sensitivity_Soft, sensitivity_Hard)
+
+matrix_Radio = matrix(c(L_Radio, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Radio_vector = c(sensitivity_Radio, sensitivity_SDSS)
+V_max_Radio_inverse = get_Vmax_inverse(matrix_Radio, sens_Radio_vector)
+
+matrix_IR = matrix(c(L_IR, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR_vector = c(sensitivity_IR, sensitivity_SDSS)
+V_max_IR_inverse = get_Vmax_inverse(matrix_IR, sens_IR_vector)
+
+matrix_IR1 = matrix(c(L_IR1, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR1_vector = c(sensitivity_IR1, sensitivity_SDSS)
+V_max_IR1_inverse = get_Vmax_inverse(matrix_IR1, sens_IR1_vector)
+
+matrix_IR2 = matrix(c(L_IR2, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR2_vector = c(sensitivity_IR2, sensitivity_SDSS)
+V_max_IR2_inverse = get_Vmax_inverse(matrix_IR2, sens_IR2_vector)
+
+matrix_Soft = matrix(c(L_Soft, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Soft_vector = c(sensitivity_Soft, sensitivity_SDSS)
+V_max_Soft_inverse = get_Vmax_inverse(matrix_Soft, sens_Soft_vector)
+
+matrix_Hard = matrix(c(L_Hard, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Hard_vector = c(sensitivity_Hard, sensitivity_SDSS)
+V_max_Hard_inverse = get_Vmax_inverse(matrix_Hard, sens_Hard_vector)
+
+
+
+matrix_color_IR = matrix(c(L_IR1, L_IR2, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_IR_vector = c(sensitivity_IR1, sensitivity_IR2, sensitivity_SDSS)
+V_max_color_IR_inverse = get_Vmax_inverse(matrix_color_IR, sens_color_IR_vector)
+
+matrix_color_Radio = matrix(c(L_Radio, L_IR, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_Radio_vector = c(sensitivity_Radio, sensitivity_IR, sensitivity_SDSS)
+V_max_color_Radio_inverse = get_Vmax_inverse(matrix_color_Radio, sens_color_Radio_vector)
+
+matrix_color_X = matrix(c(L_Hard, L_Soft, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_X_vector = c(sensitivity_Hard, sensitivity_Soft, sensitivity_SDSS)
+V_max_color_X_inverse = get_Vmax_inverse(matrix_color_X, sens_color_X_vector)
 
 
 # Getting densities, averages and dispersions for each luminosity and color:
 
 
-get_outputs = function(V_max, L, sensitivity, peso_total, densidad_pesada, densidad_pesada_2){
+get_outputs = function(V_max_inverse, L, sensitivity, peso_total, densidad_pesada, densidad_pesada_2){
   
   suavizado_minimo = 0.1
   peso_total <- matrix(0, nrow = 250, ncol = 250, byrow = TRUE)
@@ -352,7 +365,7 @@ get_outputs = function(V_max, L, sensitivity, peso_total, densidad_pesada, densi
     if ((is.na(L_p) == FALSE) & (L_p - 2*log10(redshift[p])) > sensitivity){
       densidad_p = densidad(SFR_i = SFR_grid, M_j = M_grid, SFR_p = SFR[p], M_p = M[p],
                             Delta_SFR_p = suavizado_minimo + Delta_SFR[p], Delta_M_p = suavizado_minimo + Delta_M[p])
-      w_p = densidad_p/V_max[p]
+      w_p = densidad_p*V_max_inverse[p]
       peso_total = peso_total + w_p
       densidad_pesada = densidad_pesada + L_p*w_p
       densidad_pesada_2 = densidad_pesada_2 + L_p^2*w_p
@@ -368,7 +381,7 @@ get_outputs = function(V_max, L, sensitivity, peso_total, densidad_pesada, densi
 }
 
 
-get_color_outputs = function(V_max, L1, L2, color, sensitivity1, sensitivity2,
+get_color_outputs = function(V_max_inverse, L1, L2, color, sensitivity1, sensitivity2,
                                 peso_total, densidad_pesada, densidad_pesada_2){
   
   suavizado_minimo = 0.1
@@ -386,7 +399,7 @@ get_color_outputs = function(V_max, L1, L2, color, sensitivity1, sensitivity2,
       
       densidad_p = densidad(SFR_i = SFR_grid, M_j = M_grid, SFR_p = SFR[p], M_p = M[p],
                             Delta_SFR_p = suavizado_minimo + Delta_SFR[p], Delta_M_p = suavizado_minimo + Delta_M[p])
-      w_p = densidad_p/V_max[p]
+      w_p = densidad_p*V_max_inverse[p]
       peso_total = peso_total + w_p
       densidad_pesada = densidad_pesada + color_p*w_p
       densidad_pesada_2 = densidad_pesada_2 + color_p^2*w_p
@@ -406,21 +419,21 @@ get_color_outputs = function(V_max, L1, L2, color, sensitivity1, sensitivity2,
 
 # Getting results from the previous functions:
 
-out_Radio = get_outputs(V_max_Radio, L_Radio, sensitivity_Radio, peso_total, densidad_pesada, densidad_pesada_2)
-out_IR = get_outputs(V_max_IR, L_IR, sensitivity_IR, peso_total, densidad_pesada, densidad_pesada_2)
-out_IR1 = get_outputs(V_max_IR1, L_IR1, sensitivity_IR1, peso_total, densidad_pesada, densidad_pesada_2)
-out_IR2 = get_outputs(V_max_IR2, L_IR2, sensitivity_IR2, peso_total, densidad_pesada, densidad_pesada_2)
-out_Soft = get_outputs(V_max_Soft, L_Soft, sensitivity_Soft, peso_total, densidad_pesada, densidad_pesada_2)
-out_Hard = get_outputs(V_max_Hard, L_Hard, sensitivity_Hard, peso_total, densidad_pesada, densidad_pesada_2)
+out_Radio = get_outputs(V_max_Radio_inverse, L_Radio, sensitivity_Radio, peso_total, densidad_pesada, densidad_pesada_2)
+out_IR = get_outputs(V_max_IR_inverse, L_IR, sensitivity_IR, peso_total, densidad_pesada, densidad_pesada_2)
+out_IR1 = get_outputs(V_max_IR1_inverse, L_IR1, sensitivity_IR1, peso_total, densidad_pesada, densidad_pesada_2)
+out_IR2 = get_outputs(V_max_IR2_inverse, L_IR2, sensitivity_IR2, peso_total, densidad_pesada, densidad_pesada_2)
+out_Soft = get_outputs(V_max_Soft_inverse, L_Soft, sensitivity_Soft, peso_total, densidad_pesada, densidad_pesada_2)
+out_Hard = get_outputs(V_max_Hard_inverse, L_Hard, sensitivity_Hard, peso_total, densidad_pesada, densidad_pesada_2)
 
 
-out_color_W2_W1 = get_color_outputs(V_max_color_W2_W1, L_IR1, L_IR2, color_W2_W1, 
+out_color_W2_W1 = get_color_outputs(V_max_color_IR_inverse, L_IR1, L_IR2, color_W2_W1, 
                                   sensitivity_IR1, sensitivity_IR2, peso_total, densidad_pesada, densidad_pesada_2)
 
-out_color_Radio_IR = get_color_outputs(V_max_color_Radio_IR, L_Radio, L_IR, color_Radio_IR, 
+out_color_Radio_IR = get_color_outputs(V_max_color_Radio_inverse, L_Radio, L_IR, color_Radio_IR, 
                                     sensitivity_Radio, sensitivity_IR, peso_total, densidad_pesada, densidad_pesada_2)
 
-out_color_X = get_color_outputs(V_max_color_X, L_Soft, L_Hard, color_X, 
+out_color_X = get_color_outputs(V_max_color_X_inverse, L_Soft, L_Hard, color_X, 
                                     sensitivity_Soft, sensitivity_Hard, peso_total, densidad_pesada, densidad_pesada_2)
 
 
@@ -618,29 +631,73 @@ nuradio_nu24 <- log10((1.4*10^9)/((3*10^8)/(22.1*10^-6))) # cociente de frecuenc
 
 ################################## ACTIVENESS PLOTS #####################################
 
-sigmas = function(lum){
+L_excess_IR2_copy = L_excess_IR2
+V_max_IR2_inverse_copy = V_max_IR2_inverse
+non_valid_IR2 = which(is.na(L_excess_IR2)==TRUE | is.na(V_max_IR2_inverse)==TRUE)
+L_excess_IR2_copy[non_valid_IR2] = NA
+V_max_IR2_inverse_copy[non_valid_IR2] = NA
+
+L_excess_Radio_copy = L_excess_Radio
+V_max_Radio_inverse_copy = V_max_Radio_inverse
+non_valid_Radio = which(is.na(L_excess_Radio)==TRUE | is.na(V_max_Radio_inverse)==TRUE)
+L_excess_Radio_copy[non_valid_Radio] = NA
+V_max_Radio_inverse_copy[non_valid_Radio] = NA
+
+L_excess_Hard_copy = L_excess_Hard
+V_max_Hard_inverse_copy = V_max_Hard_inverse
+non_valid_Hard = which(is.na(L_excess_Hard)==TRUE | is.na(V_max_Hard_inverse)==TRUE)
+L_excess_Hard_copy[non_valid_Hard] = NA
+V_max_Hard_inverse_copy[non_valid_Hard] = NA
+
+color_W2_W1_excess_copy = color_W2_W1_excess
+V_max_color_IR_inverse_copy = V_max_color_IR_inverse
+non_valid_color_IR = which(is.na(color_W2_W1_excess)==TRUE | is.na(V_max_color_IR_inverse)==TRUE)
+color_W2_W1_excess_copy[non_valid_color_IR] = NA
+V_max_color_IR_inverse_copy[non_valid_color_IR] = NA
+
+color_Radio_IR_excess_copy = color_Radio_IR_excess
+V_max_color_Radio_inverse_copy = V_max_color_Radio_inverse
+non_valid_color_Radio_IR = which(is.na(color_Radio_IR_excess)==TRUE | is.na(V_max_color_Radio_inverse)==TRUE)
+color_Radio_IR_excess_copy[non_valid_color_Radio_IR] = NA
+V_max_color_Radio_inverse_copy[non_valid_color_Radio_IR] = NA
+
+color_X_excess_copy = color_X_excess
+V_max_color_X_inverse_copy = V_max_color_X_inverse
+non_valid_color_X = which(is.na(color_X_excess)==TRUE | is.na(V_max_color_X_inverse)==TRUE)
+color_X_excess_copy[non_valid_color_X] = NA
+V_max_color_X_inverse_copy[non_valid_color_X] = NA
+
+
+sigmas = function(lum, V_max_inverse){
   
   x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
-  ranking = c(1:length(x_ordenado))
+  ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+  ranking = cumsum(ranking)
   ranking_interp = approxfun(x_ordenado, ranking)
-  N = length(x_ordenado)
+  
+  ranking_interp2 = approxfun(ranking, x_ordenado)
+  total_dens = max(ranking)
+  mid_dens = total_dens/2
+  pivot_point = ranking_interp2(mid_dens)
+  
+  rho = total_dens
   z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
-  N_greater = N - ranking_interp(z)
-  N_normal = rep(0, length(N_greater))
-  pivot_point = median(x_ordenado)
-  # pivot_point = moda_color_W2_W1_red
+  rho_greater = rho - ranking_interp(z)
+  rho_normal = rep(0, length(rho_greater))
+  #pivot_point = median(x_ordenado)
+  
   for (i in 1:length(z)){
     if (z[i] <= pivot_point){
-      N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+      rho_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
     }
     else {
-      N_symmetric = ranking_interp(2*pivot_point - z[i])
+      rho_symmetric = ranking_interp(2*pivot_point - z[i])
     }
-    N_normal[i] = min(N_symmetric, N_greater[i])
+    rho_normal[i] = min(rho_symmetric, rho_greater[i])
   }
   
-  N_active = N_greater - N_normal
-  f_active = N_active/N_greater
+  rho_active = rho_greater - rho_normal
+  f_active = rho_active/rho_greater
   z_active = z[min(which(f_active >= 0.5))]
   n_sigmas = (z_active - quantile(na.omit(lum), probs = 0.50))/
     (quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16))
@@ -649,36 +706,45 @@ sigmas = function(lum){
 }
 
 
-sigma_minima = min(sigmas(L_excess_IR2), sigmas(L_excess_Radio), sigmas(L_excess_Hard),
-                   sigmas(color_W2_W1_excess), sigmas(color_Radio_IR_excess), sigmas(color_X_excess))
+sigma_minima = min(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
+                   sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
+                   sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
+ 
+sigma_maxima = max(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
+                   sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
+                   sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
 
-sigma_maxima = max(sigmas(L_excess_IR2), sigmas(L_excess_Radio), sigmas(L_excess_Hard),
-                   sigmas(color_W2_W1_excess), sigmas(color_Radio_IR_excess), sigmas(color_X_excess))
 
+activeness = function(lum, xlabel, colour, V_max_inverse){
 
-activeness = function(lum, xlabel, colour){
-  
   x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
-  ranking = c(1:length(x_ordenado)) 
+  ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+  ranking = cumsum(ranking)
   ranking_interp = approxfun(x_ordenado, ranking)
-  N = length(x_ordenado)
+  
+  ranking_interp2 = approxfun(ranking, x_ordenado)
+  total_dens = max(ranking)
+  mid_dens = total_dens/2
+  pivot_point = ranking_interp2(mid_dens)
+  
+  rho = total_dens
   z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
-  N_greater = N - ranking_interp(z)
-  N_normal = rep(0, length(N_greater))
-  pivot_point = median(x_ordenado)
-  # pivot_point = moda_color_W2_W1_red
+  rho_greater = rho - ranking_interp(z)
+  rho_normal = rep(0, length(rho_greater))
+  #pivot_point = median(x_ordenado)
+  
   for (i in 1:length(z)){
     if (z[i] <= pivot_point){
-      N_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+      rho_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
     }
     else {
-      N_symmetric = ranking_interp(2*pivot_point - z[i])
+      rho_symmetric = ranking_interp(2*pivot_point - z[i])
     }
-    N_normal[i] = min(N_symmetric, N_greater[i])
+    rho_normal[i] = min(rho_symmetric, rho_greater[i])
   }
   
-  N_active = N_greater - N_normal
-  f_active = N_active/N_greater
+  rho_active = rho_greater - rho_normal
+  f_active = rho_active/rho_greater
   z_active = z[min(which(f_active >= 0.5))]
   
   minimo = sigma_minima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
@@ -688,29 +754,31 @@ activeness = function(lum, xlabel, colour){
   
   library(ggplot2)
   
-  df = data.frame(z, log10(N_normal))
-  df2 = data.frame(z, log10(N_greater))
+  df = data.frame(z, log10(rho_normal))
+  df2 = data.frame(z, log10(rho_greater))
   
   print(ggplot(df, aes(x = df$z)) +
-          ylim(0, max(na.omit(log10(N_greater)))) +
-          geom_line(aes(y = df$log10.N_normal.), color = colour, linetype = 'dashed') +
-          geom_line(aes(y = df2$log10.N_greater.), color = 'black') +
+          ylim(0, max(na.omit(log10(rho_greater)))) +
+          geom_line(aes(y = df$log10.rho_normal.), color = colour, linetype = 'dashed') +
+          geom_line(aes(y = df2$log10.rho_greater.), color = 'black') +
           geom_rect(aes(xmin = minimo, xmax = maximo, ymin = -Inf, ymax = Inf), color = 'grey', alpha = 0.005) +
           geom_vline(xintercept = z_active) +
           theme_bw() + 
           xlab(xlabel) + 
-          ylab('log (N > x)'))
-  
+          ylab('log (rho > x)'))
+
   return(z_active)
 }
 
-activeness(L_excess_IR2, 'Luminosity excess (IR W2 band)', 'red')
-activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green')
-activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue')
 
-activeness(color_W2_W1_excess, 'IR color excess', 'red')
-activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green')
-activeness(color_X_excess, 'X-Rays color excess', 'blue')
+activeness(L_excess_IR2_copy, 'Luminosity excess (IR W2 band)', 'red', V_max_IR2_inverse_copy)
+activeness(L_excess_Radio_copy, 'Luminosity excess (Radio)', 'green', V_max_Radio_inverse_copy)
+activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue', V_max_Hard_inverse)
+
+activeness(color_W2_W1_excess_copy, 'IR color excess', 'red', V_max_color_IR_inverse_copy)
+activeness(color_Radio_IR_excess_copy, 'Radio-IR color excess', 'green', V_max_color_Radio_inverse_copy)
+activeness(color_X_excess_copy, 'X-Rays color excess', 'blue', V_max_color_X_inverse_copy)
+
 
 ############## CÁLCULO DE LOS THRESHOLDS PARA CADA LUMINOSIDAD Y COLOR ################
 
@@ -845,357 +913,6 @@ plot(L_Hard, color_X, col = galaxy_class_X, pch = 16,
 #abline(h = threshold_colorX_lit, lty = 2, lwd = 2)
 abline(v = 42, lty = 4, lwd = 2)
 axis(2, col = "black", las = 0) 
-#mtext("X-Rays color", side = 2, line = 2.5)
-
-# par(mar=c(5, 4, 4, 4) + 0.1)
-# range_color_X = seq(-3,3,1) # elegimos un rango de valores para el X-Rays color
-# range_HR = round(((1/7)*10^range_color_X - 1)/((1/7)*10^range_color_X + 1), 2) # lo pasamos a HR despejando de la ecuación
-# abline(h = log10(7), lty = 2, lwd = 2) # HR = 0 ---> color_X = log10(7)
-# abline(a = 42, b = -1, lty = 4, lwd = 2) # pintamos también el criterio de selección en luminosidad Hard = 10^42 erg/s
-# axis(2, col = "black", las = 0)
-# mtext("X-Rays color", side = 2, line = 2.5)
-# par(new = TRUE)
-# plot(L_Hard, color_X, pch = 16, col = alpha('blue', 0.1),
-#      main = '',
-#      xlab = '', ylab = '', type = 'n', axes = FALSE)
-# axis(4, labels = range_HR, col = "black", col.axis = "black", las = 0, at = -3:3)
-# mtext("HR", side = 4, col = "black", line = 2)
-# axis(1, pretty(range(L_Hard)))
-# mtext("log[L (Hard X-Rays)]", side=1, col="black", line = 2.5)
-
-################################# PAPER'S TABLES ########################################
-
-IR_active = c()
-IR_color = c()
-IR_lum = c()
-IR_normal = c()
-
-for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
-    if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
-      IR_active = c(IR_active, i)
-    }
-    else if ((L_excess_IR2[i] < threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
-      IR_color = c(IR_color, i)
-    }
-    else if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] < threshold_colorIR_excess)){
-      IR_lum = c(IR_lum, i)
-    }
-    else if ((L_excess_IR2[i] < threshold_ir2_excess) & (color_W2_W1_excess[i] < threshold_colorIR_excess)){
-      IR_normal = c(IR_normal, i)
-    }
-  }
-}
-
-IR_active_Stern = 0
-IR_active_Assef = 0
-
-for (i in 1:length(IR_active)){
-  
-  if (color_W2_W1[IR_active][i] > threshold_colorIR_lit){
-    IR_active_Stern = IR_active_Stern + 1
-  }
-  if (color_W2_W1[IR_active][i] > threshold_colorIR_lit2){
-    IR_active_Assef = IR_active_Assef + 1
-  }
-}
-
-IR_color_Stern = 0
-IR_color_Assef = 0
-
-for (i in 1:length(IR_color)){
-  
-  if (color_W2_W1[IR_color][i] > threshold_colorIR_lit){
-    IR_color_Stern = IR_color_Stern + 1
-  }
-  if (color_W2_W1[IR_color][i] > threshold_colorIR_lit2){
-    IR_color_Assef = IR_color_Assef + 1
-  }
-}
-
-IR_lum_Stern = 0
-IR_lum_Assef = 0
-
-for (i in 1:length(IR_lum)){
-  
-  if (color_W2_W1[IR_lum][i] > threshold_colorIR_lit){
-    IR_lum_Stern = IR_lum_Stern + 1
-  }
-  if (color_W2_W1[IR_lum][i] > threshold_colorIR_lit2){
-    IR_lum_Assef = IR_lum_Assef + 1
-  }
-}
-
-IR_normal_Stern = 0
-IR_normal_Assef = 0
-
-for (i in 1:length(IR_normal)){
-  
-  if (color_W2_W1[IR_normal][i] > threshold_colorIR_lit){
-    IR_normal_Stern = IR_normal_Stern + 1
-  }
-  if (color_W2_W1[IR_normal][i] > threshold_colorIR_lit2){
-    IR_normal_Assef = IR_normal_Assef + 1
-  }
-}
-
-
-#############################################3
-
-Radio_active = c()
-Radio_color = c()
-Radio_lum = c()
-Radio_normal = c()
-
-for (i in 1:len){
-  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
-    if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
-      Radio_active = c(Radio_active, i)
-    }
-    else if ((L_excess_Radio[i] < threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
-      Radio_color = c(Radio_color, i)
-    }
-    else if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] < threshold_color_Radio_IR_excess)){
-      Radio_lum = c(Radio_lum, i)
-    }
-    else if ((L_excess_Radio[i] < threshold_radio_excess) & (color_Radio_IR_excess[i] < threshold_color_Radio_IR_excess)){
-      Radio_normal = c(Radio_normal, i)
-    }
-  }
-}
-
-
-Radio_active_Ibar = 0
-Radio_active_40 = 0
-
-for (i in 1:length(Radio_active)){
-  
-  if (L_Radio[Radio_active][i] > threshold_Radio_lit){
-    Radio_active_40 = Radio_active_40 + 1
-  }
-  if (color_Radio_IR[Radio_active][i] > threshold_color_Radio_IR_lit){
-    Radio_active_Ibar = Radio_active_Ibar + 1
-  }
-}
-
-Radio_color_Ibar = 0
-Radio_color_40 = 0
-
-for (i in 1:length(Radio_color)){
-  
-  if (L_Radio[Radio_color][i] > threshold_Radio_lit){
-    Radio_color_40 = Radio_color_40 + 1
-  }
-  if (color_Radio_IR[Radio_color][i] > threshold_color_Radio_IR_lit){
-    Radio_color_Ibar = Radio_color_Ibar + 1
-  }
-}
-
-Radio_lum_Ibar = 0
-Radio_lum_40 = 0
-
-for (i in 1:length(Radio_lum)){
-  
-  if (L_Radio[Radio_lum][i] > threshold_Radio_lit){
-    Radio_lum_40 = Radio_lum_40 + 1
-  }
-  if (color_Radio_IR[Radio_lum][i] > threshold_color_Radio_IR_lit){
-    Radio_lum_Ibar = Radio_lum_Ibar + 1
-  }
-}
-
-Radio_normal_Ibar = 0
-Radio_normal_40 = 0
-
-for (i in 1:length(Radio_normal)){
-  
-  if (L_Radio[Radio_normal][i] > threshold_Radio_lit){
-    Radio_normal_40 = Radio_normal_40 + 1
-  }
-  if (color_Radio_IR[Radio_normal][i] > threshold_color_Radio_IR_lit){
-    Radio_normal_Ibar = Radio_normal_Ibar + 1
-  }
-}
-
-#################################
-
-X_active = c()
-X_color = c()
-X_lum = c()
-X_normal = c()
-
-for (i in 1:len){
-  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
-    if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
-      X_active = c(X_active, i)
-    }
-    else if ((L_excess_Hard[i] < threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
-      X_color = c(X_color, i)
-    }
-    else if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] < threshold_colorX_excess)){
-      X_lum = c(X_lum, i)
-    }
-    else if ((L_excess_Hard[i] < threshold_hard_excess) & (color_X_excess[i] < threshold_colorX_excess)){
-      X_normal = c(X_normal, i)
-    }
-  }
-}
-
-L_active_lit = 0
-
-for (i in 1:length(X_active)){
-  if (L_Hard[X_active][i] > threshold_Hard_lit){
-    L_active_lit = L_active_lit + 1
-  }
-}
-
-L_color_lit = 0
-
-for (i in 1:length(X_color)){
-  if (L_Hard[X_color][i] > threshold_Hard_lit){
-    L_color_lit = L_color_lit + 1
-  }
-}
-
-L_lum_lit = 0
-
-for (i in 1:length(X_lum)){
-  if (L_Hard[X_lum][i] > threshold_Hard_lit){
-    L_lum_lit = L_lum_lit + 1
-  }
-}
-
-L_normal_lit = 0
-
-for (i in 1:length(X_normal)){
-  if (L_Hard[X_normal][i] > threshold_Hard_lit){
-    L_normal_lit = L_normal_lit + 1
-  }
-}
-
-
-
-################################################################################################
-
-for (i in 1:len){
-  if (is.na(color_Radio_IR[i])==TRUE){
-    q_24[i] = NA
-  }
-}
-
-q_24_copy = q_24
-q_24_red = q_24_copy
-
-q_24_copy[Radio_active] = NA
-q_24_yellow = q_24_copy
-
-q_24_copy[Radio_color] = NA
-q_24_green = q_24_copy
-
-q_24_copy[Radio_lum] = NA
-q_24_blue = q_24_copy
-
-
-hist(q_24_red, breaks=100, col = alpha('red', 1))
-hist(q_24_yellow, breaks=100, col = alpha('yellow', 1), add=T)
-hist(q_24_green, breaks=100, col = alpha('green', 1), add=T)
-hist(q_24_blue, breaks=100, col = alpha('blue', 1), add=T)
-abline(v = -0.23)
-
-######################################  Sparse Matrix  #########################################
-
-
-Sparse = array(0, dim = c(5, 5, 5))
-
-X = rep(0, len)
-
-
-for (i in 1:len){
-  if ((is.na(color_X[i]) == TRUE) | (is.na(color_X_reducido[i]) == TRUE) | (is.na(L_reducida_Hard[i]) == TRUE)){
-    X[i] = 5 #undetected (grey)
-  }
-  else {
-    if (L_reducida_Hard[i] > threshold_hard_excess){
-      if ((color_X_reducido[i] > threshold_colorX_excess)){
-        X[i] = 1 #active (red)
-      }
-      else {
-        X[i] = 2 #luminous (green)
-      }
-    }
-    else {
-      if ((color_X_reducido[i] > threshold_colorX_excess)){
-        X[i] = 3 #color (yellow)
-      }
-      else {
-        X[i] = 4 #normal (blue)
-      }
-    }
-  }
-}
-
-
-
-IR = rep(0, len)
-
-
-for (i in 1:len){
-  if ((is.na(color_W2_W1[i]) == TRUE) | (is.na(color_W2_W1_reducido[i]) == TRUE) | (is.na(L_reducida_IR2[i]) == TRUE)){
-    IR[i] = 5 #undetected (grey)
-  }
-  else {
-    if (L_reducida_IR2[i] > threshold_ir2_excess){
-      if ((color_W2_W1_reducido[i] > threshold_colorIR_excess)){
-        IR[i] = 1 #active (red)
-      }
-      else {
-        IR[i] = 2 #luminous (green)
-      }
-    }
-    else {
-      if ((color_W2_W1_reducido[i] > threshold_colorIR_excess)){
-        IR[i] = 3 #color (yellow)
-      }
-      else {
-        IR[i] = 4 #normal (blue)
-      }
-    }
-  }
-}
-
-
-
-R = rep(0, len)
-
-
-for (i in 1:len){
-  if ((is.na(color_Radio_IR[i]) == TRUE) | (is.na(color_Radio_IR_reducido[i]) == TRUE) | (is.na(L_reducida_Radio[i]) == TRUE)){
-    R[i] = 5 #undetected (grey)
-  }
-  else {
-    if (L_reducida_Radio[i] > threshold_radio_excess){
-      if ((color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
-        R[i] = 1 #active (red)
-      }
-      else {
-        R[i] = 2 #luminous (green)
-      }
-    }
-    else {
-      if ((color_Radio_IR_reducido[i] > threshold_color_Radio_IR_excess)){
-        R[i] = 3 #color (yellow)
-      }
-      else {
-        R[i] = 4 #normal (blue)
-      }
-    }
-  }
-}
-
-
-for (i in 1:len){
-  Sparse[X[i], IR[i], R[i]] = Sparse[X[i], IR[i], R[i]] + 1
-}
 
 #######################################################################################################################
 
@@ -1395,456 +1112,3 @@ for (i in 1:len){
 contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
-
-################################################################################################################
-
-get_Vmax_inverse = function(L, sensitivity){
-  z_max = 10^((L - sensitivity)/2) 
-  z_max = ifelse(z_max > 0.01, z_max, 0.01)
-  z_max = ifelse(z_max < 0.07, z_max, 0.07)
-  return(1/z_max^3)
-}
-
-get_Vmax_color_inverse = function(L1, L2, sensitivity1, sensitivity2){
-  z_max1 = 10^((L1 - sensitivity1)/2)
-  z_max2 = 10^((L2 - sensitivity2)/2)
-  z_max = ifelse(z_max1 < z_max2, z_max1, z_max2)
-  z_max = ifelse(z_max > 0.01, z_max, 0.01)
-  z_max = ifelse(z_max < 0.07, z_max, 0.07)
-  return(1/z_max^3)
-}
-
-library(plotrix)
-library(psych)
-
-V_max_Radio_inverse = get_Vmax_inverse(L_Radio, sensitivity_Radio)
-V_max_IR_inverse = get_Vmax_inverse(L_IR, sensitivity_IR)
-V_max_IR1_inverse = get_Vmax_inverse(L_IR1, sensitivity_IR1)
-V_max_IR2_inverse = get_Vmax_inverse(L_IR2, sensitivity_IR2)
-V_max_Soft_inverse = get_Vmax_inverse(L_Soft, sensitivity_Soft)
-V_max_Hard_inverse = get_Vmax_inverse(L_Hard, sensitivity_Hard)
-
-V_max_color_W2_W1_inverse = get_Vmax_color_inverse(L_IR1, L_IR2, sensitivity_IR1, sensitivity_IR2)
-V_max_color_Radio_IR_inverse = get_Vmax_color_inverse(L_Radio, L_IR, sensitivity_Radio, sensitivity_IR)
-V_max_color_X_inverse = get_Vmax_color_inverse(L_Soft, L_Hard, sensitivity_Soft, sensitivity_Hard)
-
-
-###########################################################################################################
-
-color_W2_W1_excess_copy = color_W2_W1_excess
-color_W2_W1_excess_red = color_W2_W1_excess_copy
-V_max_color_W2_W1_inverse_copy = V_max_color_W2_W1_inverse
-V_max_color_W2_W1_inverse_red = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_excess_copy[IR_active] = NA
-color_W2_W1_excess_yellow = color_W2_W1_excess_copy
-V_max_color_W2_W1_inverse_copy[IR_active] = NA
-V_max_color_W2_W1_inverse_yellow = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_excess_copy[IR_color] = NA
-color_W2_W1_excess_green = color_W2_W1_excess_copy
-V_max_color_W2_W1_inverse_copy[IR_color] = NA
-V_max_color_W2_W1_inverse_green = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_excess_copy[IR_lum] = NA
-color_W2_W1_excess_blue = color_W2_W1_excess_copy
-V_max_color_W2_W1_inverse_copy[IR_lum] = NA
-V_max_color_W2_W1_inverse_blue = V_max_color_W2_W1_inverse_copy
-
-
-a = as.data.frame(na.omit(color_W2_W1_excess_red))
-b = as.data.frame(na.omit(V_max_color_W2_W1_inverse_red))
-weighted.hist(a,b, breaks=seq(-0.35,0.35,0.7/50), col = alpha('red', 0.5), xaxis = TRUE)
-weighted.hist(na.omit(color_W2_W1_excess_yellow), na.omit(V_max_color_W2_W1_inverse_yellow), breaks=seq(-0.35,0.35,0.7/50),col = 'yellow', add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_W2_W1_excess_green), na.omit(V_max_color_W2_W1_inverse_green), breaks=seq(-0.35,0.35,0.7/50), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_W2_W1_excess_blue), na.omit(V_max_color_W2_W1_inverse_blue), breaks=seq(-0.35,0.35,0.7/50), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-weighted.hist(na.omit(color_W2_W1_excess_red), na.omit(V_max_color_W2_W1_inverse_red), breaks=seq(-0.35,0.75,0.05),
-              col = alpha('red', 1), xaxis = TRUE, log='y', ylim = c(1,2e8), offset=1)
-weighted.hist(na.omit(color_W2_W1_excess_yellow), na.omit(V_max_color_W2_W1_inverse_yellow), breaks=seq(-0.35,0.75,0.05),
-              col = alpha('yellow', 1), xaxis = FALSE, log='y', ylim = c(1,2e8), offset=1, add=T)
-weighted.hist(na.omit(color_W2_W1_excess_green), na.omit(V_max_color_W2_W1_inverse_green), breaks=seq(-0.35,0.75,0.05),
-              col = alpha('green', 1), xaxis = FALSE, log='y', ylim = c(1,2e8), offset=1, add=T)
-weighted.hist(na.omit(color_W2_W1_excess_blue), na.omit(V_max_color_W2_W1_inverse_blue), breaks=seq(-0.35,0.75,0.05),
-              col = alpha('blue', 1), xaxis = FALSE, log='y', ylim = c(1,2e8), offset=1, add=T)
-
-
-
-L_excess_IR2_copy = L_excess_IR2
-L_excess_IR2_red = L_excess_IR2_copy
-V_max_IR2_inverse_copy = V_max_IR2_inverse
-V_max_IR2_inverse_red = V_max_IR2_inverse_copy
-
-L_excess_IR2_copy[IR_active] = NA
-L_excess_IR2_yellow = L_excess_IR2_copy
-V_max_IR2_inverse_copy[IR_active] = NA
-V_max_IR2_inverse_yellow = V_max_IR2_inverse_copy
-
-L_excess_IR2_copy[IR_color] = NA
-L_excess_IR2_green = L_excess_IR2_copy
-V_max_IR2_inverse_copy[IR_color] = NA
-V_max_IR2_inverse_green = V_max_IR2_inverse_copy
-
-L_excess_IR2_copy[IR_lum] = NA
-L_excess_IR2_blue = L_excess_IR2_copy
-V_max_IR2_inverse_copy[IR_lum] = NA
-V_max_IR2_inverse_blue = V_max_IR2_inverse_copy
-
-weighted.hist(na.omit(L_excess_IR2_red), na.omit(V_max_IR2_inverse_red), breaks=seq(-1,1,2/50), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_excess_IR2_yellow), na.omit(V_max_IR2_inverse_yellow), breaks=seq(-1,1,2/50), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_IR2_green), na.omit(V_max_IR2_inverse_green), breaks=seq(-1,1,2/50), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_IR2_blue), na.omit(V_max_IR2_inverse_blue), breaks=seq(-1,1,2/50), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-##########################
-
-
-color_Radio_IR_excess_copy = color_Radio_IR_excess
-color_Radio_IR_excess_red = color_Radio_IR_excess_copy
-V_max_color_Radio_IR_inverse_copy = V_max_color_Radio_IR_inverse
-V_max_color_Radio_IR_inverse_red = V_max_color_Radio_IR_inverse_copy
-
-color_Radio_IR_excess_copy[Radio_active] = NA
-color_Radio_IR_excess_yellow = color_Radio_IR_excess_copy
-V_max_color_Radio_IR_inverse_copy[Radio_active] = NA
-V_max_color_Radio_IR_inverse_yellow = V_max_color_Radio_IR_inverse_copy
-
-
-color_Radio_IR_excess_copy[Radio_color] = NA
-color_Radio_IR_excess_green = color_Radio_IR_excess_copy
-V_max_color_Radio_IR_inverse_copy[Radio_color] = NA
-V_max_color_Radio_IR_inverse_green = V_max_color_Radio_IR_inverse_copy
-
-color_Radio_IR_excess_copy[Radio_lum] = NA
-color_Radio_IR_excess_blue = color_Radio_IR_excess_copy
-V_max_color_Radio_IR_inverse_copy[Radio_lum] = NA
-V_max_color_Radio_IR_inverse_blue = V_max_color_Radio_IR_inverse_copy
-
-weighted.hist(na.omit(color_Radio_IR_excess_red), na.omit(V_max_color_Radio_IR_inverse_red), breaks=seq(-2,2,4/30), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(color_Radio_IR_excess_yellow), na.omit(V_max_color_Radio_IR_inverse_yellow), breaks=seq(-2,2,4/30), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_Radio_IR_excess_green), na.omit(V_max_color_Radio_IR_inverse_green), breaks=seq(-2,2,4/30), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_Radio_IR_excess_blue), na.omit(V_max_color_Radio_IR_inverse_blue), breaks=seq(-2,2,4/30), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-L_excess_Radio_copy = L_excess_Radio
-L_excess_Radio_red = L_excess_Radio_copy
-V_max_Radio_inverse_copy = V_max_Radio_inverse
-V_max_Radio_inverse_red = V_max_Radio_inverse_copy
-
-L_excess_Radio_copy[Radio_active] = NA
-L_excess_Radio_yellow = L_excess_Radio_copy
-V_max_Radio_inverse_copy[Radio_active] = NA
-V_max_Radio_inverse_yellow = V_max_Radio_inverse_copy
-
-L_excess_Radio_copy[Radio_color] = NA
-L_excess_Radio_green = L_excess_Radio_copy
-V_max_Radio_inverse_copy[Radio_color] = NA
-V_max_Radio_inverse_green = V_max_Radio_inverse_copy
-
-L_excess_Radio_copy[Radio_lum] = NA
-L_excess_Radio_blue = L_excess_Radio_copy
-V_max_Radio_inverse_copy[Radio_lum] = NA
-V_max_Radio_inverse_blue = V_max_Radio_inverse_copy
-
-weighted.hist(na.omit(L_excess_Radio_red), na.omit(V_max_Radio_inverse_red), breaks=seq(-1,2, 2.7/30), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_excess_Radio_yellow), na.omit(V_max_Radio_inverse_yellow), breaks=seq(-1,2, 2.7/30), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_Radio_green), na.omit(V_max_Radio_inverse_green), breaks=seq(-1,2, 2.7/30), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_Radio_blue), na.omit(V_max_Radio_inverse_blue), breaks=seq(-1,2, 2.7/30), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-#################################################
-
-
-color_X_excess_copy = color_X_excess
-color_X_excess_red = color_X_excess_copy
-V_max_color_X_inverse_copy = V_max_color_X_inverse
-V_max_color_X_inverse_red = V_max_color_X_inverse_copy
-
-color_X_excess_copy[X_active] = NA
-color_X_excess_yellow = color_X_excess_copy
-V_max_color_X_inverse_copy[X_active] = NA
-V_max_color_X_inverse_yellow = V_max_color_X_inverse_copy
-
-color_X_excess_copy[X_color] = NA
-color_X_excess_green = color_X_excess_copy
-V_max_color_X_inverse_copy[X_color] = NA
-V_max_color_X_inverse_green = V_max_color_X_inverse_copy
-
-color_X_excess_copy[X_lum] = NA
-color_X_excess_blue = color_X_excess_copy
-V_max_color_X_inverse_copy[X_lum] = NA
-V_max_color_X_inverse_blue = V_max_color_X_inverse_copy
-
-weighted.hist(na.omit(color_X_excess_red), na.omit(V_max_color_X_inverse_red), breaks=seq(-2,2,4/10), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(color_X_excess_yellow), na.omit(V_max_color_X_inverse_yellow), breaks=seq(-2,2,4/10), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_X_excess_green), na.omit(V_max_color_X_inverse_green), breaks=seq(-2,2,4/10), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_X_excess_blue), na.omit(V_max_color_X_inverse_blue), breaks=seq(-2,2,4/10), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-L_excess_Hard_copy = L_excess_Hard
-L_excess_Hard_red = L_excess_Hard_copy
-V_max_Hard_inverse_copy = V_max_Hard_inverse
-V_max_Hard_inverse_red = V_max_Hard_inverse_copy
-
-L_excess_Hard_copy[X_active] = NA
-L_excess_Hard_yellow = L_excess_Hard_copy
-V_max_Hard_inverse_copy[X_active] = NA 
-V_max_Hard_inverse_yellow = V_max_Hard_inverse_copy
-
-L_excess_Hard_copy[X_color] = NA
-L_excess_Hard_green = L_excess_Hard_copy
-V_max_Hard_inverse_copy[X_color] = NA
-V_max_Hard_inverse_green = V_max_Hard_inverse_copy
-
-L_excess_Hard_copy[X_lum] = NA
-L_excess_Hard_blue = L_excess_Hard_copy
-V_max_Hard_inverse_copy[X_lum] = NA
-V_max_Hard_inverse_blue = V_max_Hard_inverse_copy
-
-
-weighted.hist(na.omit(L_excess_Hard_red), na.omit(V_max_Hard_inverse_red), breaks=seq(-2,2, 4/15), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_excess_Hard_yellow), na.omit(V_max_Hard_inverse_yellow), breaks=seq(-2,2, 4/15), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_Hard_green), na.omit(V_max_Hard_inverse_green), breaks=seq(-2,2, 4/15), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_excess_Hard_blue), na.omit(V_max_Hard_inverse_blue), breaks=seq(-2,2, 4/15), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-#########################################################
-
-
-color_W2_W1_copy = color_W2_W1
-color_W2_W1_red = color_W2_W1_copy
-V_max_color_W2_W1_inverse_copy = V_max_color_W2_W1_inverse
-V_max_color_W2_W1_inverse_red = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_copy[IR_active] = NA
-color_W2_W1_yellow = color_W2_W1_copy
-V_max_color_W2_W1_inverse_copy[IR_active] = NA
-V_max_color_W2_W1_inverse_yellow = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_copy[IR_color] = NA
-color_W2_W1_green = color_W2_W1_copy
-V_max_color_W2_W1_inverse_copy[IR_color] = NA
-V_max_color_W2_W1_inverse_green = V_max_color_W2_W1_inverse_copy
-
-color_W2_W1_copy[IR_lum] = NA
-color_W2_W1_blue = color_W2_W1_copy
-V_max_color_W2_W1_inverse_copy[IR_lum] = NA
-V_max_color_W2_W1_inverse_blue = V_max_color_W2_W1_inverse_copy
-
-
-weighted.hist(na.omit(color_W2_W1_red), na.omit(V_max_color_W2_W1_inverse_red), breaks=seq(-0.6,0,0.6/50), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(color_W2_W1_yellow), na.omit(V_max_color_W2_W1_inverse_yellow), breaks=seq(-0.6,0,0.6/50), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_W2_W1_green), na.omit(V_max_color_W2_W1_inverse_green), breaks=seq(-0.6,0,0.6/50), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_W2_W1_blue), na.omit(V_max_color_W2_W1_inverse_blue), breaks=seq(-0.6,0,0.6/50), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-L_IR2_copy = L_IR2
-L_IR2_red = L_IR2_copy
-V_max_IR2_inverse_copy = V_max_IR2_inverse
-V_max_IR2_inverse_red = V_max_IR2_inverse_copy
-
-L_IR2_copy[IR_active] = NA
-L_IR2_yellow = L_IR2_copy
-V_max_IR2_inverse_copy[IR_active] = NA
-V_max_IR2_inverse_yellow = V_max_IR2_inverse_copy
-
-L_IR2_copy[IR_color] = NA
-L_IR2_green = L_IR2_copy
-V_max_IR2_inverse_copy[IR_color] = NA
-V_max_IR2_inverse_green = V_max_IR2_inverse_copy
-
-L_IR2_copy[IR_lum] = NA
-L_IR2_blue = L_IR2_copy
-V_max_IR2_inverse_copy[IR_lum] = NA
-V_max_IR2_inverse_blue = V_max_IR2_inverse_copy
-
-weighted.hist(na.omit(L_IR2_red), na.omit(V_max_IR2_inverse_red), breaks = seq(40,44,4/50), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_IR2_yellow), na.omit(V_max_IR2_inverse_yellow), breaks = seq(40,44,4/50), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_IR2_green), na.omit(V_max_IR2_inverse_green), breaks = seq(40,44,4/50), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_IR2_blue), na.omit(V_max_IR2_inverse_blue), breaks = seq(40,44,4/50), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-#############################################################3
-
-
-
-color_Radio_IR_copy = color_Radio_IR
-color_Radio_IR_red = color_Radio_IR_copy
-V_max_color_Radio_IR_inverse_copy = V_max_color_Radio_IR_inverse
-V_max_color_Radio_IR_inverse_red = V_max_color_Radio_IR_inverse_copy
-
-color_Radio_IR_copy[Radio_active] = NA
-color_Radio_IR_yellow = color_Radio_IR_copy
-V_max_color_Radio_IR_inverse_copy[Radio_active] = NA
-V_max_color_Radio_IR_inverse_yellow = V_max_color_Radio_IR_inverse_copy
-
-
-color_Radio_IR_copy[Radio_color] = NA
-color_Radio_IR_green = color_Radio_IR_copy
-V_max_color_Radio_IR_inverse_copy[Radio_color] = NA
-V_max_color_Radio_IR_inverse_green = V_max_color_Radio_IR_inverse_copy
-
-color_Radio_IR_copy[Radio_lum] = NA
-color_Radio_IR_blue = color_Radio_IR_copy
-V_max_color_Radio_IR_inverse_copy[Radio_lum] = NA
-V_max_color_Radio_IR_inverse_blue = V_max_color_Radio_IR_inverse_copy
-
-weighted.hist(na.omit(color_Radio_IR_red), na.omit(V_max_color_Radio_IR_inverse_red), breaks=seq(-6,-1, 5/30), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(color_Radio_IR_yellow), na.omit(V_max_color_Radio_IR_inverse_yellow), breaks=seq(-6,-1, 5/30), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_Radio_IR_green), na.omit(V_max_color_Radio_IR_inverse_green), breaks=seq(-6,-1, 5/30), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_Radio_IR_blue), na.omit(V_max_color_Radio_IR_inverse_blue), breaks=seq(-6,-1, 5/30), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-L_Radio_copy = L_Radio
-L_Radio_red = L_Radio_copy
-V_max_Radio_inverse_copy = V_max_Radio_inverse
-V_max_Radio_inverse_red = V_max_Radio_inverse_copy
-
-L_Radio_copy[Radio_active] = NA
-L_Radio_yellow = L_Radio_copy
-V_max_Radio_inverse_copy[Radio_active] = NA
-V_max_Radio_inverse_yellow = V_max_Radio_inverse_copy
-
-L_Radio_copy[Radio_color] = NA
-L_Radio_green = L_Radio_copy
-V_max_Radio_inverse_copy[Radio_color] = NA
-V_max_Radio_inverse_green = V_max_Radio_inverse_copy
-
-L_Radio_copy[Radio_lum] = NA
-L_Radio_blue = L_Radio_copy
-V_max_Radio_inverse_copy[Radio_lum] = NA
-V_max_Radio_inverse_blue = V_max_Radio_inverse_copy
-
-weighted.hist(na.omit(L_Radio_red), na.omit(V_max_Radio_inverse_red), breaks=seq(36,41, 5/30), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_Radio_yellow), na.omit(V_max_Radio_inverse_yellow), breaks=seq(36,41, 5/30), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_Radio_green), na.omit(V_max_Radio_inverse_green), breaks=seq(36,41, 5/30), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_Radio_blue), na.omit(V_max_Radio_inverse_blue), breaks=seq(36,41, 5/30), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-#######################################################
-
-
-color_X_copy = color_X
-color_X_red = color_X_copy
-V_max_color_X_inverse_copy = V_max_color_X_inverse
-V_max_color_X_inverse_red = V_max_color_X_inverse_copy
-
-color_X_copy[X_active] = NA
-color_X_yellow = color_X_copy
-V_max_color_X_inverse_copy[X_active] = NA
-V_max_color_X_inverse_yellow = V_max_color_X_inverse_copy
-
-color_X_copy[X_color] = NA
-color_X_green = color_X_copy
-V_max_color_X_inverse_copy[X_color] = NA
-V_max_color_X_inverse_green = V_max_color_X_inverse_copy
-
-color_X_copy[X_lum] = NA
-color_X_blue = color_X_copy
-V_max_color_X_inverse_copy[X_lum] = NA
-V_max_color_X_inverse_blue = V_max_color_X_inverse_copy
-
-weighted.hist(na.omit(color_X_red), na.omit(V_max_color_X_inverse_red), breaks=seq(-2,2,4/10), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(color_X_yellow), na.omit(V_max_color_X_inverse_yellow), breaks=seq(-2,2,4/10), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_X_green), na.omit(V_max_color_X_inverse_green), breaks=seq(-2,2,4/10), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(color_X_blue), na.omit(V_max_color_X_inverse_blue), breaks=seq(-2,2,4/10), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-
-L_Hard_copy = L_Hard
-L_Hard_red = L_Hard_copy
-V_max_Hard_inverse_copy = V_max_Hard_inverse
-V_max_Hard_inverse_red = V_max_Hard_inverse_copy
-
-L_Hard_copy[X_active] = NA
-L_Hard_yellow = L_Hard_copy
-V_max_Hard_inverse_copy[X_active] = NA 
-V_max_Hard_inverse_yellow = V_max_Hard_inverse_copy
-
-L_Hard_copy[X_color] = NA
-L_Hard_green = L_Hard_copy
-V_max_Hard_inverse_copy[X_color] = NA
-V_max_Hard_inverse_green = V_max_Hard_inverse_copy
-
-L_Hard_copy[X_lum] = NA
-L_Hard_blue = L_Hard_copy
-V_max_Hard_inverse_copy[X_lum] = NA
-V_max_Hard_inverse_blue = V_max_Hard_inverse_copy
-
-
-weighted.hist(na.omit(L_Hard_red), na.omit(V_max_Hard_inverse_red), breaks=seq(38.5,44.5, 6/15), col = alpha('red', 1), xaxis = TRUE)
-weighted.hist(na.omit(L_Hard_yellow), na.omit(V_max_Hard_inverse_yellow), breaks=seq(38.5,44.5, 6/15), col = alpha('yellow', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_Hard_green), na.omit(V_max_Hard_inverse_green), breaks=seq(38.5,44.5, 6/15), col = alpha('green', 1), add=T, xaxis = FALSE)
-weighted.hist(na.omit(L_Hard_blue), na.omit(V_max_Hard_inverse_blue), breaks=seq(38.5,44.5, 6/15), col = alpha('blue', 1), add=T, xaxis = FALSE)
-
-
-################################################3
-
-
-
-
-activeness2 = function(lum, V_max_inverse, xlabel, colour){
-  
-  sorted_luminosity = sort.int(lum, na.last = TRUE, index.return = TRUE)
-  x_ordenado = na.omit(sorted_luminosity$x)
-  N = length(x_ordenado)
-  sorted_index = sorted_luminosity$ix[1:N]
-  sorted_V_max_inverse = V_max_inverse[sorted_index]
-  density_lower = cumsum(sorted_V_max_inverse)
-  density_lower_interp = approxfun(x_ordenado, density_lower)
-  total_density = density_lower[N]
-  z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
-  density_greater = total_density - density_lower_interp(z)
-  normal = rep(0, length(z))
-  pivot_point = 0
-  # pivot_point = moda_color_W2_W1_red
-  for (i in 1:length(z)){
-    if (z[i] <= pivot_point){
-      symmetric = 2*density_lower_interp(pivot_point) - density_lower_interp(z[i])
-    }
-    else {
-      symmetric = density_lower_interp(2*pivot_point - z[i])
-    }
-    normal[i] = min(symmetric, density_greater[i])
-  }
-  
-  active = density_greater - normal
-  f_active = active/density_greater
-  z_active = z[min(which(f_active >= 0.5))]
-  
-  minimo = sigma_minima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
-    quantile(na.omit(lum), probs = 0.50)
-  maximo = sigma_maxima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
-    quantile(na.omit(lum), probs = 0.50)
-  
-  library(ggplot2)
-  
-  df = data.frame(z, log10(normal))
-  df2 = data.frame(z, log10(density_greater))
-  
-  print(ggplot(df, aes(x = df$z)) +
-          ylim(0, max(na.omit(log10(density_greater)))) +
-          geom_line(aes(y = df$log10.normal.), color = colour, linetype = 'dashed') +
-          geom_line(aes(y = df2$log10.density_greater.), color = 'black') +
-          geom_rect(aes(xmin = minimo, xmax = maximo, ymin = -Inf, ymax = Inf), color = 'grey', alpha = 0.005) +
-          geom_vline(xintercept = z_active) +
-          theme_bw() + 
-          xlab(xlabel) + 
-          ylab('log (N > x)'))
-  
-  return(z_active)
-}
-
-activeness2(L_excess_IR2, V_max_IR2_inverse, 'Luminosity excess (IR W2 band)', 'red')
-activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green')
-activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue')
-
-activeness(color_W2_W1_excess, 'IR color excess', 'red')
-activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green')
-activeness(color_X_excess, 'X-Rays color excess', 'blue')

@@ -89,7 +89,7 @@ for (i in 1:len){
     q_24[i] <- NA
     
   }
-  else if ((is.na(Delta_M[i]) == FALSE & Delta_M[i] > 2) | (is.na(Delta_SFR[i]) == FALSE & Delta_SFR[i] > 2)){ 
+  else if (((is.na(M[i]/Delta_M[i]) == FALSE) & ((M[i]/Delta_M[i]) < 2)) | ((is.na(SFR[i]/Delta_SFR[i]) == FALSE) & ((SFR[i]/Delta_SFR[i]) < 2))){ 
     
     SFR[i] <- NA
     M[i] <- NA
@@ -263,6 +263,32 @@ for (i in 1:len){
 }
 
 
+##########################   REMOVE EXTREME MASSES AND SFRs   ####################################
+
+
+for (i in 1:len){
+  if (is.na(M[i]) == FALSE & is.na(SFR[i]) == FALSE){
+    
+    if (M[i] < 8.5 | M[i] > 11.5 | SFR[i] < -2 | SFR[i] > 1){
+      
+      L_Radio[i] <- NA
+      L_IR[i] <- NA
+      L_IR1[i] <- NA
+      L_IR2[i] <- NA
+      L_Soft[i] <- NA
+      L_Hard[i] <- NA
+      color_W2_W1[i] <- NA
+      color_Radio_IR[i] <- NA
+      color_X[i] <- NA
+      
+      color_IR[i] <- NA
+      q_24[i] <- NA
+      
+    }
+  }
+}
+
+
 ############# GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS ##############
 
 SFR_y <- seq(min(na.omit(SFR)), max(na.omit(SFR)), (max(na.omit(SFR)) - min(na.omit(SFR)))/249)
@@ -299,6 +325,8 @@ get_Vmax_inverse = function(L, sensitivity){
   return(1/z_max^3)
 }
 
+# Sensitivity (i.e. flux limit above which we have data for each band): it's been visually estimated from
+# plot(redshift, L - 2*log10(redshift)) for each frequency
 
 sensitivity_Radio = 40.85
 sensitivity_IR = 44.8
@@ -528,31 +556,6 @@ plot_color_X = get_plots(out_color_X$color_mean, contours_color_X, '<X-Rays colo
 plot_color_X_disp = get_plots(out_color_X$Dispersion, contours_color_X, 'Dispersion X-Rays color')
 
 
-##########################   REMOVE EXTREME MASSES AND SFRs   ####################################
-
-
-for (i in 1:len){
-  if (is.na(M[i]) == FALSE & is.na(SFR[i]) == FALSE){
-    
-    if (M[i] < 8.5 | M[i] > 11.5 | SFR[i] < -2 | SFR[i] > 1){
-      
-      L_Radio[i] <- NA
-      L_IR[i] <- NA
-      L_IR1[i] <- NA
-      L_IR2[i] <- NA
-      L_Soft[i] <- NA
-      L_Hard[i] <- NA
-      color_W2_W1[i] <- NA
-      color_Radio_IR[i] <- NA
-      color_X[i] <- NA
-      
-      color_IR[i] <- NA
-      q_24[i] <- NA
-      
-    }
-  }
-}
-
 
 ############ CÁLCULO DE LAS LUMINOSIDADES Y COLORES MEDIOS Y DE SUS EXCESOS ############
 
@@ -668,70 +671,136 @@ color_X_excess_copy[non_valid_color_X] = NA
 V_max_color_X_inverse_copy[non_valid_color_X] = NA
 
 
-sigmas = function(lum, V_max_inverse){
-  
-  x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
-  ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
-  ranking = cumsum(ranking)
-  ranking_interp = approxfun(x_ordenado, ranking)
-  
-  ranking_interp2 = approxfun(ranking, x_ordenado)
-  total_dens = max(ranking)
-  mid_dens = total_dens/2
-  pivot_point = ranking_interp2(mid_dens)
-  
-  rho = total_dens
-  z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
-  rho_greater = rho - ranking_interp(z)
-  rho_normal = rep(0, length(rho_greater))
-  #pivot_point = median(x_ordenado)
-  
-  for (i in 1:length(z)){
-    if (z[i] <= pivot_point){
-      rho_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
-    }
-    else {
-      rho_symmetric = ranking_interp(2*pivot_point - z[i])
-    }
-    rho_normal[i] = min(rho_symmetric, rho_greater[i])
-  }
-  
-  rho_active = rho_greater - rho_normal
-  f_active = rho_active/rho_greater
-  z_active = z[min(which(f_active >= 0.5))]
-  n_sigmas = (z_active - quantile(na.omit(lum), probs = 0.50))/
-    (quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16))
-  
-  return(as.numeric(n_sigmas))
-}
+# sigmas = function(lum, V_max_inverse){
+#   
+#   x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
+#   ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+#   ranking = cumsum(ranking)
+#   ranking_interp = approxfun(x_ordenado, ranking)
+#   
+#   ranking_interp2 = approxfun(ranking, x_ordenado)
+#   total_dens = max(ranking)
+#   mid_dens = total_dens/2
+#   pivot_point = ranking_interp2(mid_dens)
+#   
+#   rho = total_dens
+#   z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
+#   rho_greater = rho - ranking_interp(z)
+#   rho_normal = rep(0, length(rho_greater))
+#   #pivot_point = median(x_ordenado)
+#   
+#   for (i in 1:length(z)){
+#     if (z[i] <= pivot_point){
+#       rho_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+#     }
+#     else {
+#       rho_symmetric = ranking_interp(2*pivot_point - z[i])
+#     }
+#     rho_normal[i] = min(rho_symmetric, rho_greater[i])
+#   }
+#   
+#   rho_active = rho_greater - rho_normal
+#   f_active = rho_active/rho_greater
+#   z_active = z[min(which(f_active >= 0.5))]
+#   n_sigmas = (z_active - quantile(na.omit(lum), probs = 0.50))/
+#     (quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16))
+#   
+#   return(as.numeric(n_sigmas))
+# }
+# 
+# 
+# sigma_minima = min(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
+#                    sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
+#                    sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
+#  
+# sigma_maxima = max(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
+#                    sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
+#                    sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
+# 
+# 
+# activeness = function(lum, xlabel, colour, V_max_inverse){
+# 
+#   indice_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$ix)
+#   x_ordenado = lum[indice_ordenado]
+#   #ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+#   ranking = V_max_inverse[indice_ordenado]
+#   ranking = cumsum(ranking)
+#   ranking = ranking/ranking[length(ranking)]
+#   ranking_interp = approxfun(x_ordenado, ranking)
+#   
+#   ranking_interp2 = approxfun(ranking, x_ordenado)
+#   total_dens = max(ranking)
+#   mid_dens = total_dens/2
+#   pivot_point = ranking_interp2(mid_dens)
+#   
+#   rho = total_dens
+#   z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
+#   rho_greater = rho - ranking_interp(z)
+#   rho_normal = rep(0, length(rho_greater))
+#   #pivot_point = median(x_ordenado)
+#   
+#   for (i in 1:length(z)){
+#     if (z[i] <= pivot_point){
+#       rho_symmetric = 2*ranking_interp(pivot_point) - ranking_interp(z[i])
+#     }
+#     else {
+#       rho_symmetric = ranking_interp(2*pivot_point - z[i])
+#     }
+#     rho_normal[i] = min(rho_symmetric, rho_greater[i])
+#   }
+#   
+#   rho_active = rho_greater - rho_normal
+#   f_active = rho_active/rho_greater
+#   z_active = z[min(which(f_active >= 0.5))]
+#   
+#   minimo = sigma_minima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
+#     quantile(na.omit(lum), probs = 0.50)
+#   maximo = sigma_maxima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
+#     quantile(na.omit(lum), probs = 0.50)
+#   
+#   library(ggplot2)
+#   
+#   df = data.frame(z, log10(rho_normal))
+#   df2 = data.frame(z, log10(rho_greater))
+#   
+#   print(ggplot(df, aes(x = df$z)) +
+#           ylim(0, max(na.omit(log10(rho_greater)))) +
+#           geom_line(aes(y = df$log10.rho_normal.), color = colour, linetype = 'dashed') +
+#           geom_line(aes(y = df2$log10.rho_greater.), color = 'black') +
+#           geom_rect(aes(xmin = minimo, xmax = maximo, ymin = -Inf, ymax = Inf), color = 'grey', alpha = 0.005) +
+#           geom_vline(xintercept = z_active) +
+#           theme_bw() + 
+#           xlab(xlabel) + 
+#           ylab('log (rho > x)'))
+# 
+#   return(z_active)
+# }
 
-
-sigma_minima = min(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
-                   sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
-                   sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
- 
-sigma_maxima = max(sigmas(L_excess_IR2_copy, V_max_IR2_inverse_copy), sigmas(L_excess_Radio_copy, V_max_Radio_inverse_copy),
-                   sigmas(L_excess_Hard_copy, V_max_Hard_inverse_copy), sigmas(color_W2_W1_excess_copy, V_max_color_IR_inverse_copy), 
-                   sigmas(color_Radio_IR_excess_copy, V_max_color_Radio_inverse_copy), sigmas(color_X_excess_copy, V_max_color_X_inverse_copy))
 
 
 activeness = function(lum, xlabel, colour, V_max_inverse){
-
-  x_ordenado = na.omit(sort.int(lum, na.last = TRUE, index.return = TRUE)$x)
-  ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+  
+  indice_ordenado = sort.int(lum, na.last = TRUE, index.return = TRUE)$ix[1:length(na.omit(lum))]
+  
+  x_ordenado = lum[indice_ordenado]
+  #ranking = na.omit(sort.int(V_max_inverse, na.last = TRUE, index.return = TRUE)$x)
+  ranking = V_max_inverse[indice_ordenado]
   ranking = cumsum(ranking)
-  ranking_interp = approxfun(x_ordenado, ranking)
+  ranking = ranking/ranking[length(ranking)]
+  ranking_interp = approxfun(x_ordenado, ranking, yleft = 0, yright = 1)
   
   ranking_interp2 = approxfun(ranking, x_ordenado)
   total_dens = max(ranking)
   mid_dens = total_dens/2
   pivot_point = ranking_interp2(mid_dens)
+  #pivot_point = 0
+  
   
   rho = total_dens
   z = seq(min(x_ordenado), max(x_ordenado), (max(x_ordenado) - min(x_ordenado))/300)
   rho_greater = rho - ranking_interp(z)
   rho_normal = rep(0, length(rho_greater))
-  #pivot_point = median(x_ordenado)
+  
   
   for (i in 1:length(z)){
     if (z[i] <= pivot_point){
@@ -747,28 +816,15 @@ activeness = function(lum, xlabel, colour, V_max_inverse){
   f_active = rho_active/rho_greater
   z_active = z[min(which(f_active >= 0.5))]
   
-  minimo = sigma_minima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
-    quantile(na.omit(lum), probs = 0.50)
-  maximo = sigma_maxima*(quantile(na.omit(lum), probs = 0.50) - quantile(na.omit(lum), probs = 0.16)) +
-    quantile(na.omit(lum), probs = 0.50)
-  
-  library(ggplot2)
-  
-  df = data.frame(z, log10(rho_normal))
-  df2 = data.frame(z, log10(rho_greater))
-  
-  print(ggplot(df, aes(x = df$z)) +
-          ylim(0, max(na.omit(log10(rho_greater)))) +
-          geom_line(aes(y = df$log10.rho_normal.), color = colour, linetype = 'dashed') +
-          geom_line(aes(y = df2$log10.rho_greater.), color = 'black') +
-          geom_rect(aes(xmin = minimo, xmax = maximo, ymin = -Inf, ymax = Inf), color = 'grey', alpha = 0.005) +
-          geom_vline(xintercept = z_active) +
-          theme_bw() + 
-          xlab(xlabel) + 
-          ylab('log (rho > x)'))
-
+  plot(z, rho_greater, pch='.', log = 'y', ylim = c(0.001, 1), type='n')
+  lines(z, rho_greater, ylim = c(0.001, 1))
+  lines(z, rho_normal, col='blue')
+  lines(z, rho_active, col='red')
+  abline(v=z_active)
   return(z_active)
 }
+
+
 
 
 activeness(L_excess_IR2_copy, 'Luminosity excess (IR W2 band)', 'red', V_max_IR2_inverse_copy)
@@ -789,12 +845,12 @@ threshold_Radio_lit = 40 # L > 10^40 erg/s ---> Radio-loud AGN
 threshold_Hard_lit = 42 # L > 10^42 erg/s ---> AGN
 threshold_colorX_lit = log10(7)
 
-threshold_ir2_excess = as.numeric(activeness(L_excess_IR2, 'Luminosity excess (IR W2 band)', 'red'))
-threshold_colorIR_excess = as.numeric(activeness(color_W2_W1_excess, 'IR color excess', 'red'))
-threshold_radio_excess = as.numeric(activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green'))
-threshold_color_Radio_IR_excess = as.numeric(activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green'))
-threshold_hard_excess = as.numeric(activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue'))
-threshold_colorX_excess = as.numeric(activeness(color_X_excess, 'X-Rays color excess', 'blue'))
+threshold_ir2_excess = as.numeric(activeness(L_excess_IR2, 'Luminosity excess (IR W2 band)', 'red', V_max_IR2_inverse_copy))
+threshold_colorIR_excess = as.numeric(activeness(color_W2_W1_excess, 'IR color excess', 'red', V_max_color_IR_inverse_copy))
+threshold_radio_excess = as.numeric(activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green', V_max_Radio_inverse_copy))
+threshold_color_Radio_IR_excess = as.numeric(activeness(color_Radio_IR_excess, 'Radio-IR color excess', 'green', V_max_color_Radio_inverse_copy))
+threshold_hard_excess = as.numeric(activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue', V_max_Hard_inverse_copy))
+threshold_colorX_excess = as.numeric(activeness(color_X_excess, 'X-Rays color excess', 'blue', V_max_color_X_inverse_copy))
 
 
 ################################### FINAL PLOTS ########################################
@@ -804,8 +860,11 @@ threshold_colorX_excess = as.numeric(activeness(color_X_excess, 'X-Rays color ex
 # Rojo: active galaxy. Verde: luminosity extreme. Amarillo: color extreme. Azul: normal galaxy
 # get_galaxy_type hace esto para un objeto dados sus excesos de luminosidad y color
 
+color_active = alpha('red4', 0.2)
+
+
 get_galaxy_type = function(L_i, color_i, threshold_L, threshold_color, alpha_value){
-  galaxy_type = alpha("blue", alpha_value/10)
+  galaxy_type = alpha("blue", alpha_value)
   if ((is.na(L_i) == FALSE) & (L_i > threshold_L)){
     galaxy_type = alpha("green", alpha_value)
     if ((is.na(color_i) == FALSE) & (color_i > threshold_color)){
@@ -840,8 +899,8 @@ abline(h = threshold_colorIR_excess, lty = 2, lwd = 2)
 abline(v = threshold_ir2_excess, lty = 4, lwd = 2)
 
 data_IR = which(is.na(L_excess_IR2 & color_W2_W1_excess)==FALSE)
-plot(M[data_IR], SFR[data_IR], col = galaxy_class_IR[data_IR], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
+#plot(M[data_IR], SFR[data_IR], col = galaxy_class_IR[data_IR], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
+#     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 
 # Pintamos ahora color frente a luminosidad y comparamos con la literatura:
@@ -873,8 +932,8 @@ abline(h = threshold_color_Radio_IR_excess, lty = 2, lwd = 2)
 abline(v = threshold_radio_excess, lty = 4, lwd = 2)
 
 data_Radio = which(is.na(L_excess_Radio & color_Radio_IR_excess)==FALSE)
-plot(M[data_Radio], SFR[data_Radio], col = galaxy_class_Radio[data_Radio], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
+#plot(M[data_Radio], SFR[data_Radio], col = galaxy_class_Radio[data_Radio], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
+#     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 par(mar = c(5, 4, 4, 4) + 0.1)
 plot(L_Radio, color_Radio_IR, col = galaxy_class_Radio, pch = 16,
@@ -893,19 +952,40 @@ axis(4, col = "black", col.axis = "black", las = 0)
 axis(1, pretty(range(L_Radio)))
 mtext("log[L (Radio)]", side = 1, col = "black", line = 2.5)
 
+##################### X-RAYS DON'T HAVE THRESHOLD IN COLOR SO WE DEFINE THEIR OWN FUNCTIONS ####################
 
 
-galaxy_class_X = galaxy_classification(L_excess_Hard, color_X_excess,
-                                       threshold_hard_excess, threshold_colorX_excess, 1)
+get_galaxy_type_X = function(L_i, threshold_L, alpha_value){
+  
+  galaxy_type = alpha("blue", alpha_value)
+  if ((is.na(L_i) == FALSE) & (L_i > threshold_L)){
+    galaxy_type = alpha("green", alpha_value)
+  }
+
+  return (galaxy_type)
+}
+# galaxy_classification lo generaliza y recorre todos los objetos para cada banda
+
+galaxy_classification_X = function(L, threshold_L, alpha_value){
+  N = length(L)
+  galaxy_class = as.vector(rep(alpha("black", 1), N))
+  for (i in 1:N){
+    galaxy_class[i] = get_galaxy_type_X(L[i], threshold_L, alpha_value)
+  }
+  return(galaxy_class)
+}
+
+
+galaxy_class_X = galaxy_classification_X(L_excess_Hard, threshold_hard_excess, 1)
 
 plot(L_excess_Hard, color_X_excess, col = galaxy_class_X, pch = 16, ylim = c(-1, 2),
      xlab = "Hard X-Rays luminosity excess", ylab = "X-Rays color excess")
-abline(h = threshold_colorX_excess, lty = 2, lwd = 2)
+#abline(h = threshold_colorX_excess, lty = 2, lwd = 2)
 abline(v = threshold_hard_excess, lty = 4, lwd = 2)
 
-data_X = which(is.na(L_excess_Hard & color_X_excess)==FALSE)
-plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
+#data_X = which(is.na(L_excess_Hard & color_X_excess)==FALSE)
+#plot(M[data_X], SFR[data_X], col = galaxy_class_X[data_X], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
+#     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 
 
 plot(L_Hard, color_X, col = galaxy_class_X, pch = 16,
@@ -921,194 +1001,299 @@ axis(2, col = "black", las = 0)
 
 #IR
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
-    if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_IR_active = which((galaxy_class_IR == alpha('red4', 0.2)))
+
+plot(M[data_IR_active], SFR[data_IR_active], col = galaxy_class_IR[data_IR_active], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
-    if ((L_excess_IR2[i] > threshold_ir2_excess) & (color_W2_W1_excess[i] < threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_IR_lum = which((galaxy_class_IR == alpha('green', 0.2)))
+plot(M[data_IR_lum], SFR[data_IR_lum], col = galaxy_class_IR[data_IR_lum], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
-    if ((L_excess_IR2[i] < threshold_ir2_excess) & (color_W2_W1_excess[i] > threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_IR_col = which((galaxy_class_IR == alpha('gold', 0.2)))
+plot(M[data_IR_col], SFR[data_IR_col], col = galaxy_class_IR[data_IR_col], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_IR2[i] & color_W2_W1_excess[i]) == FALSE)){
-    if ((L_excess_IR2[i] < threshold_ir2_excess) & (color_W2_W1_excess[i] < threshold_colorIR_excess)){
-      points(M[i], SFR[i], col = alpha('blue', 0.01), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_IR_normal = which((galaxy_class_IR == alpha('blue', 0.2)))
+plot(M[data_IR_normal], SFR[data_IR_normal], col = galaxy_class_IR[data_IR_normal], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_W2_W1, levels = .1, add = TRUE, lty = 1)
-
-
 
 #RADIO
+data_Radio_nondet = which((is.na(L_excess_Radio)==FALSE) & (is.na(color_Radio_IR_excess)==TRUE))
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
-    if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_Radio_active = which((is.na(L_excess_Radio)==FALSE) & (is.na(color_Radio_IR_excess)==FALSE) &
+                         (galaxy_class_Radio == alpha('red4', 0.3)))
+plot(M[data_Radio_active], SFR[data_Radio_active], col = galaxy_class_Radio[data_Radio_active], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
-    if ((L_excess_Radio[i] > threshold_radio_excess) & (color_Radio_IR_excess[i] < threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_Radio_lum = which((is.na(L_excess_Radio)==FALSE) & (is.na(color_Radio_IR_excess)==FALSE) &
+                         (galaxy_class_Radio == alpha('green', 0.3)))
+plot(M[data_Radio_lum], SFR[data_Radio_lum], col = galaxy_class_Radio[data_Radio_lum], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
-    if ((L_excess_Radio[i] < threshold_radio_excess) & (color_Radio_IR_excess[i] > threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_Radio_col = which((is.na(L_excess_Radio)==FALSE) & (is.na(color_Radio_IR_excess)==FALSE) &
+                            (galaxy_class_Radio == alpha('gold', 0.3)))
+plot(M[data_Radio_col], SFR[data_Radio_col], col = galaxy_class_Radio[data_Radio_col], pch = 16, 
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Radio[i] & color_Radio_IR_excess[i]) == FALSE)){
-    if ((L_excess_Radio[i] < threshold_radio_excess) & (color_Radio_IR_excess[i] < threshold_color_Radio_IR_excess)){
-      points(M[i], SFR[i], col = alpha('blue', 0.3), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_Radio_normal = which((is.na(L_excess_Radio)==FALSE) & (is.na(color_Radio_IR_excess)==FALSE) &
+                         (galaxy_class_Radio == alpha('blue', 0.03)))
+plot(M[data_Radio_normal], SFR[data_Radio_normal], col = galaxy_class_Radio[data_Radio_normal], pch = 16,
+     xlim = c(8.5, 11.5), ylim = c(-2, 1), xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_Radio_IR, levels = .1, add = TRUE, lty = 1)
 
 
 #X-RAYS
+data_X_nondet = which((is.na(L_excess_Hard)==FALSE) & (is.na(color_X_excess)==TRUE))
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
-    if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('red', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_X_lum = which((is.na(L_excess_Hard)==FALSE) & (galaxy_class_X == alpha('green', 1)))
+plot(M[data_X_lum], SFR[data_X_lum], col = galaxy_class_X[data_X_lum], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
+     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
 
-
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
-    if ((L_excess_Hard[i] > threshold_hard_excess) & (color_X_excess[i] < threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('green', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
+data_X_normal = which((is.na(L_excess_Hard)==FALSE) & (galaxy_class_X == alpha('blue', 1)))
+plot(M[data_X_normal], SFR[data_X_normal], col = galaxy_class_X[data_X_normal], pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
+     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
 contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
 contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
 contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
+##########################################################################################################
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
-    if ((L_excess_Hard[i] < threshold_hard_excess) & (color_X_excess[i] > threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('gold', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
+sets = function(v, set){
+  v_new = v
+  v_new[set] = NA
+  return(v_new)
 }
-contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
 
 
-plot(M, SFR, col = 'black', pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-     xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)", type = 'n')
-for (i in 1:len){
-  if ((is.na(L_excess_Hard[i] & color_X_excess[i]) == FALSE)){
-    if ((L_excess_Hard[i] < threshold_hard_excess) & (color_X_excess[i] < threshold_colorX_excess)){
-      points(M[i], SFR[i], col = alpha('blue', 0.5), pch = 16, xlim = c(8.5, 11.5), ylim = c(-2, 1),
-             xlab = "log[M* (solar masses)]", ylab = "log[SFR (solar masses/yr)")
-    }
-  }
-}
-contour(M_X, SFR_y, contours_color_X, levels = .9, add = TRUE, lty = 3)
-contour(M_X, SFR_y, contours_color_X, levels = .5, add = TRUE, lty = 2)
-contour(M_X, SFR_y, contours_color_X, levels = .1, add = TRUE, lty = 1)
+# IR color
+
+color_W2_W1_excess_grey = color_W2_W1_excess
+color_W2_W1_excess_red = sets(color_W2_W1_excess_grey, data_IR_nondet)
+color_W2_W1_excess_yellow = sets(color_W2_W1_excess_red, data_IR_active)
+color_W2_W1_excess_green = sets(color_W2_W1_excess_yellow, data_IR_col)
+color_W2_W1_excess_blue = sets(color_W2_W1_excess_green, data_IR_lum)
+
+V_max_color_IR_inverse_grey = V_max_color_IR_inverse
+V_max_color_IR_inverse_red = sets(V_max_color_IR_inverse_grey, data_IR_nondet)
+V_max_color_IR_inverse_yellow = sets(V_max_color_IR_inverse_red, data_IR_active)
+V_max_color_IR_inverse_green = sets(V_max_color_IR_inverse_yellow, data_IR_col)
+V_max_color_IR_inverse_blue = sets(V_max_color_IR_inverse_green, data_IR_lum)
+
+color_W2_W1_excess_grey = na.omit(color_W2_W1_excess_grey)
+color_W2_W1_excess_red = na.omit(color_W2_W1_excess_red)
+color_W2_W1_excess_yellow = na.omit(color_W2_W1_excess_yellow)
+color_W2_W1_excess_green = na.omit(color_W2_W1_excess_green)
+color_W2_W1_excess_blue = na.omit(color_W2_W1_excess_blue)
+
+V_max_color_IR_inverse_grey = na.omit(V_max_color_IR_inverse_grey)
+V_max_color_IR_inverse_red = na.omit(V_max_color_IR_inverse_red)
+V_max_color_IR_inverse_yellow = na.omit(V_max_color_IR_inverse_yellow)
+V_max_color_IR_inverse_green = na.omit(V_max_color_IR_inverse_green)
+V_max_color_IR_inverse_blue = na.omit(V_max_color_IR_inverse_blue)
+
+range_color_IR = seq(min(na.omit(color_W2_W1_excess)), max(na.omit(color_W2_W1_excess)), 
+                     (max(na.omit(color_W2_W1_excess)) - min(na.omit(color_W2_W1_excess)))/50)
+
+
+weighted.hist(color_W2_W1_excess_grey, V_max_color_IR_inverse_grey, col = alpha('grey', 1), breaks=seq(-0.25,0.25,0.5/50), xaxis = TRUE)
+weighted.hist(color_W2_W1_excess_red, V_max_color_IR_inverse_red, col = alpha('red', 1), breaks=seq(-0.25,0.25,0.5/50), add=T, xaxis = FALSE)
+weighted.hist(color_W2_W1_excess_yellow, V_max_color_IR_inverse_yellow, breaks=seq(-0.25,0.25,0.5/50),col = alpha('yellow',1), add=T, xaxis = FALSE)
+weighted.hist(color_W2_W1_excess_green, V_max_color_IR_inverse_green, breaks=seq(-0.25,0.25,0.5/50), col = alpha('green', 1), add=T, xaxis = FALSE)
+weighted.hist(color_W2_W1_excess_blue, V_max_color_IR_inverse_blue, breaks=seq(-0.25,0.25,0.5/50), col = alpha('blue', 1),add=T, xaxis = FALSE)
+
+
+# L_IR2 luminosity
+
+L_excess_IR2_grey = L_excess_IR2
+L_excess_IR2_red = sets(L_excess_IR2_grey, data_IR_nondet)
+L_excess_IR2_yellow = sets(L_excess_IR2_red, data_IR_active)
+L_excess_IR2_green = sets(L_excess_IR2_yellow, data_IR_col)
+L_excess_IR2_blue = sets(L_excess_IR2_green, data_IR_lum)
+
+V_max_IR2_inverse_grey = V_max_IR2_inverse
+V_max_IR2_inverse_red = sets(V_max_IR2_inverse_grey, data_IR_nondet)
+V_max_IR2_inverse_yellow = sets(V_max_IR2_inverse_red, data_IR_active)
+V_max_IR2_inverse_green = sets(V_max_IR2_inverse_yellow, data_IR_col)
+V_max_IR2_inverse_blue = sets(V_max_IR2_inverse_green, data_IR_lum)
+
+L_excess_IR2_grey = na.omit(L_excess_IR2_grey)
+L_excess_IR2_red = na.omit(L_excess_IR2_red)
+L_excess_IR2_yellow = na.omit(L_excess_IR2_yellow)
+L_excess_IR2_green = na.omit(L_excess_IR2_green)
+L_excess_IR2_blue = na.omit(L_excess_IR2_blue)
+
+V_max_IR2_inverse_grey = na.omit(V_max_IR2_inverse_grey)
+V_max_IR2_inverse_red = na.omit(V_max_IR2_inverse_red)
+V_max_IR2_inverse_yellow = na.omit(V_max_IR2_inverse_yellow)
+V_max_IR2_inverse_green = na.omit(V_max_IR2_inverse_green)
+V_max_IR2_inverse_blue = na.omit(V_max_IR2_inverse_blue)
+
+range_IR2 = seq(min(na.omit(L_excess_IR2)), max(na.omit(L_excess_IR2)), 
+                     (max(na.omit(L_excess_IR2)) - min(na.omit(L_excess_IR2)))/50)
+
+weighted.hist(L_excess_IR2_grey, V_max_IR2_inverse_grey, col = alpha('grey', 1), breaks = seq(-1,1, 2/50), xaxis = TRUE)
+weighted.hist(L_excess_IR2_red, V_max_IR2_inverse_red, col = alpha('red', 1), breaks = seq(-1,1, 2/50), add=T, xaxis = FALSE)
+weighted.hist(L_excess_IR2_yellow, V_max_IR2_inverse_yellow, col = alpha('yellow', 1), breaks = seq(-1,1, 2/50), add=T, xaxis = FALSE)
+weighted.hist(L_excess_IR2_green, V_max_IR2_inverse_green, col = alpha('green', 1), breaks = seq(-1,1, 2/50), add=T, xaxis = FALSE)
+weighted.hist(L_excess_IR2_blue, V_max_IR2_inverse_blue, col = alpha('blue', 1), breaks = seq(-1,1, 2/50), add=T, xaxis = FALSE)
+
+
+# color Radio-IR
+
+color_Radio_IR_excess_grey = color_Radio_IR_excess
+color_Radio_IR_excess_red = sets(color_Radio_IR_excess_grey, data_Radio_nondet)
+color_Radio_IR_excess_yellow = sets(color_Radio_IR_excess_red, data_Radio_active)
+color_Radio_IR_excess_green = sets(color_Radio_IR_excess_yellow, data_Radio_col)
+color_Radio_IR_excess_blue = sets(color_Radio_IR_excess_green, data_Radio_lum)
+
+V_max_color_Radio_IR_inverse_grey = V_max_color_Radio_inverse
+V_max_color_Radio_IR_inverse_red = sets(V_max_color_Radio_IR_inverse_grey, data_Radio_nondet)
+V_max_color_Radio_IR_inverse_yellow = sets(V_max_color_Radio_IR_inverse_red, data_Radio_active)
+V_max_color_Radio_IR_inverse_green = sets(V_max_color_Radio_IR_inverse_yellow, data_Radio_col)
+V_max_color_Radio_IR_inverse_blue = sets(V_max_color_Radio_IR_inverse_green, data_Radio_lum)
+
+color_Radio_IR_excess_grey = na.omit(color_Radio_IR_excess_grey)
+color_Radio_IR_excess_red = na.omit(color_Radio_IR_excess_red)
+color_Radio_IR_excess_yellow = na.omit(color_Radio_IR_excess_yellow)
+color_Radio_IR_excess_green = na.omit(color_Radio_IR_excess_green)
+color_Radio_IR_excess_blue = na.omit(color_Radio_IR_excess_blue)
+
+V_max_color_Radio_IR_inverse_grey = na.omit(V_max_color_Radio_IR_inverse_grey)
+V_max_color_Radio_IR_inverse_red = na.omit(V_max_color_Radio_IR_inverse_red)
+V_max_color_Radio_IR_inverse_yellow = na.omit(V_max_color_Radio_IR_inverse_yellow)
+V_max_color_Radio_IR_inverse_green = na.omit(V_max_color_Radio_IR_inverse_green)
+V_max_color_Radio_IR_inverse_blue = na.omit(V_max_color_Radio_IR_inverse_blue)
+
+range_color_Radio = seq(min(na.omit(color_Radio_IR_excess)), max(na.omit(color_Radio_IR_excess)), 
+                     (max(na.omit(color_Radio_IR_excess)) - min(na.omit(color_Radio_IR_excess)))/20)
+
+weighted.hist(color_Radio_IR_excess_grey, V_max_color_Radio_IR_inverse_grey, col = alpha('grey', 1), breaks = seq(-2,2.5,4.5/20), xaxis = TRUE)
+weighted.hist(color_Radio_IR_excess_red, V_max_color_Radio_IR_inverse_red, col = alpha('red', 1), breaks = seq(-2,2.5,4.5/20),  xaxis = FALSE)
+weighted.hist(color_Radio_IR_excess_yellow, V_max_color_Radio_IR_inverse_yellow, breaks = seq(-2,2.5,4.5/20),col = alpha('yellow',1), add=T, xaxis = FALSE)
+weighted.hist(color_Radio_IR_excess_green, V_max_color_Radio_IR_inverse_green, breaks = seq(-2,2.5,4.5/20), col = alpha('green', 1), add=T, xaxis = FALSE)
+weighted.hist(color_Radio_IR_excess_blue, V_max_color_Radio_IR_inverse_blue, breaks = seq(-2,2.5,4.5/20), col = alpha('blue', 1), add=T, xaxis = FALSE)
+
+
+# Radio luminosity:
+
+L_excess_Radio_grey = L_excess_Radio
+L_excess_Radio_red = sets(L_excess_Radio_grey, data_Radio_nondet)
+L_excess_Radio_yellow = sets(L_excess_Radio_red, data_Radio_active)
+L_excess_Radio_green = sets(L_excess_Radio_yellow, data_Radio_col)
+L_excess_Radio_blue = sets(L_excess_Radio_green, data_Radio_lum)
+
+V_max_Radio_inverse_grey = V_max_Radio_inverse
+V_max_Radio_inverse_red = sets(V_max_Radio_inverse_grey, data_Radio_nondet)
+V_max_Radio_inverse_yellow = sets(V_max_Radio_inverse_red, data_Radio_active)
+V_max_Radio_inverse_green = sets(V_max_Radio_inverse_yellow, data_Radio_col)
+V_max_Radio_inverse_blue = sets(V_max_Radio_inverse_green, data_Radio_lum)
+
+L_excess_Radio_grey = na.omit(L_excess_Radio_grey)
+L_excess_Radio_red = na.omit(L_excess_Radio_red)
+L_excess_Radio_yellow = na.omit(L_excess_Radio_yellow)
+L_excess_Radio_green = na.omit(L_excess_Radio_green)
+L_excess_Radio_blue = na.omit(L_excess_Radio_blue)
+
+V_max_Radio_inverse_grey = na.omit(V_max_Radio_inverse_grey)
+V_max_Radio_inverse_red = na.omit(V_max_Radio_inverse_red)
+V_max_Radio_inverse_yellow = na.omit(V_max_Radio_inverse_yellow)
+V_max_Radio_inverse_green = na.omit(V_max_Radio_inverse_green)
+V_max_Radio_inverse_blue = na.omit(V_max_Radio_inverse_blue)
+
+range_Radio = seq(min(na.omit(L_excess_Radio)), max(na.omit(L_excess_Radio)), 
+                (max(na.omit(L_excess_Radio)) - min(na.omit(L_excess_Radio)))/50)
+
+weighted.hist(L_excess_Radio_grey, V_max_Radio_inverse_grey, col = alpha('grey', 1), breaks = seq(-1,2,3/20), xaxis = TRUE)
+weighted.hist(L_excess_Radio_red, V_max_Radio_inverse_red, col = alpha('red', 1), breaks = seq(-1,2,3/20), add=T, xaxis = FALSE)
+weighted.hist(L_excess_Radio_yellow, V_max_Radio_inverse_yellow, col = alpha('yellow', 1), breaks = seq(-1,2,3/20), add=T, xaxis = FALSE)
+weighted.hist(L_excess_Radio_green, V_max_Radio_inverse_green, col = alpha('green', 1), breaks = seq(-1,2,3/20), add=T, xaxis = FALSE)
+weighted.hist(L_excess_Radio_blue, V_max_Radio_inverse_blue, col = alpha('blue', 1), breaks = seq(-1,2,3/20), add=T, xaxis = FALSE)
+
+
+# X-Rays color
+
+color_X_excess_grey = color_X_excess
+color_X_excess_green = sets(color_X_excess_grey, data_X_nondet)
+color_X_excess_blue = sets(color_X_excess_green, data_X_lum)
+
+V_max_color_X_inverse_grey = V_max_color_X_inverse
+V_max_color_X_inverse_green = sets(V_max_color_X_inverse_grey, data_X_nondet)
+V_max_color_X_inverse_blue = sets(V_max_color_X_inverse_green, data_X_lum)
+
+color_X_excess_grey = na.omit(color_X_excess_grey)
+color_X_excess_green = na.omit(color_X_excess_green)
+color_X_excess_blue = na.omit(color_X_excess_blue)
+
+V_max_color_X_inverse_grey = na.omit(V_max_color_X_inverse_grey)
+V_max_color_X_inverse_green = na.omit(V_max_color_X_inverse_green)
+V_max_color_X_inverse_blue = na.omit(V_max_color_X_inverse_blue)
+
+range_color_X = seq(min(na.omit(color_X_excess)), max(na.omit(color_X_excess)), 
+                     (max(na.omit(color_X_excess)) - min(na.omit(color_X_excess)))/50)
+
+weighted.hist(color_X_excess_grey, V_max_color_X_inverse_grey, col = alpha('grey', 1), breaks=seq(-1.5,2,3.5/25), xaxis = TRUE)
+weighted.hist(color_X_excess_green, V_max_color_X_inverse_green, col = alpha('green', 1), breaks=seq(-1.5,2,3.5/25), add=T, xaxis = FALSE)
+weighted.hist(color_X_excess_blue, V_max_color_X_inverse_blue, breaks=seq(-1.5,2,3.5/25),col = alpha('blue', 1), add=T, xaxis = FALSE)
+
+
+# Hard luminosity
+L_excess_Hard_grey = L_excess_Hard
+L_excess_Hard_green = sets(L_excess_Hard_grey, data_X_nondet)
+L_excess_Hard_blue = sets(L_excess_Hard_green, data_X_lum)
+
+V_max_Hard_inverse_grey = V_max_Hard_inverse
+V_max_Hard_inverse_green = sets(V_max_Hard_inverse_grey, data_X_nondet)
+V_max_Hard_inverse_blue = sets(V_max_Hard_inverse_green, data_X_lum)
+
+L_excess_Hard_grey = na.omit(L_excess_Hard_grey)
+L_excess_Hard_green = na.omit(L_excess_Hard_green)
+L_excess_Hard_blue = na.omit(L_excess_Hard_blue)
+
+V_max_Hard_inverse_grey = na.omit(V_max_Hard_inverse_grey)
+V_max_Hard_inverse_green = na.omit(V_max_Hard_inverse_green)
+V_max_Hard_inverse_blue = na.omit(V_max_Hard_inverse_blue)
+
+range_Hard = seq(min(na.omit(L_excess_Hard)), max(na.omit(L_excess_Hard)), 
+                (max(na.omit(L_excess_Hard)) - min(na.omit(L_excess_Hard)))/50)
+
+weighted.hist(L_excess_Hard_grey, V_max_Hard_inverse_grey, col = alpha('grey', 1), breaks = seq(-2,2,4/10), xaxis = TRUE)
+weighted.hist(L_excess_Hard_green, V_max_Hard_inverse_green, col = alpha('green', 1), breaks = seq(-2,2,4/10), add=T, xaxis = FALSE)
+weighted.hist(L_excess_Hard_blue, V_max_Hard_inverse_blue, col = alpha('blue', 1), breaks = seq(-2,2, 4/10), add=T, xaxis = FALSE)
+
+
+

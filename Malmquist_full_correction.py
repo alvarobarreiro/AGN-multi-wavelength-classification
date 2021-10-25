@@ -79,7 +79,8 @@ SN_SFR = log_SFR/sigma_SFR
 SN_M = log_M/sigma_M
 
 for i in range(data_length):
-    if ((np.isnan(log_SFR[i]) == False and log_SFR[i] == -9999) or (np.isnan(log_M[i]) == False and log_M[i] == -9999)):
+    
+    if ((np.isnan(log_SFR[i]) == True) or (np.isnan(log_M[i]) == True)):
         
         log_SFR[i] = np.nan
         log_M[i] = np.nan
@@ -101,7 +102,32 @@ for i in range(data_length):
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
         
-    elif ((np.isnan(SN_M[i]) == False and SN_M[i] < 2) or (np.isnan(SN_SFR[i]) == False and SN_SFR[i] < 2)):
+    elif ((log_SFR[i] == -9999) or (log_M[i] == -9999)):
+        
+        log_SFR[i] = np.nan
+        log_M[i] = np.nan
+        sigma_SFR[i] = np.nan
+        sigma_M[i] = np.nan
+        SN_SFR[i] = np.nan
+        SN_M[i] = np.nan
+        
+        log_L_Radio[i] = np.nan
+        log_L_IR4[i] = np.nan
+        log_L_IR1[i] = np.nan
+        log_L_IR2[i] = np.nan
+        log_L_Soft[i] = np.nan
+        log_L_Hard[i] = np.nan
+        color_IR[i] = np.nan
+        color_Radio_IR[i] = np.nan
+        color_X[i] = np.nan
+        
+        IR_color_mag[i] = np.nan
+        q_24[i] = np.nan
+        
+
+for i in range(data_length):
+        
+    if ((np.isnan(SN_M[i]) == True) or (np.isnan(SN_SFR[i]) == True)):
         
         log_SFR[i] = np.nan
         log_M[i] = np.nan
@@ -120,6 +146,29 @@ for i in range(data_length):
         
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
+        
+    elif ((SN_M[i] < 2) or (SN_SFR[i] < 2)):
+        
+        log_SFR[i] = np.nan
+        log_M[i] = np.nan
+        sigma_SFR[i] = np.nan
+        sigma_M[i] = np.nan
+        
+        log_L_Radio[i] = np.nan
+        log_L_IR4[i] = np.nan
+        log_L_IR1[i] = np.nan
+        log_L_IR2[i] = np.nan
+        log_L_Soft[i] = np.nan
+        log_L_Hard[i] = np.nan
+        color_IR[i] = np.nan
+        color_Radio_IR[i] = np.nan
+        color_X[i] = np.nan
+        
+        IR_color_mag[i] = np.nan
+        q_24[i] = np.nan
+        
+        
+for i in range(data_length):
         
     if redshift[i] < 0.01:
         
@@ -151,7 +200,7 @@ sigma_Hard = sdss_xmatch['Hard_flux_error'].values
 SN_Hard = sdss_xmatch['Hard_flux'].values/sigma_Hard
 
 sigma_Radio = sdss_xmatch['e_S1_4'].values
-SN_Radio = sdss_xmatch['e_S1_4'].values/sigma_Radio
+SN_Radio = sdss_xmatch['S1_4'].values/sigma_Radio
 
 sigma_IR4 = sdss_xmatch['IR_flux_error..erg.s.cm.2.Hz.'].values
 SN_IR4 = sdss_xmatch['IR_flux..erg.s.cm.2.Hz.'].values/sigma_IR4
@@ -221,34 +270,33 @@ for i in range(data_length):
 # Filtro en color IR:
     
 for i in range(data_length):
-    if (np.isnan(SN_IR1[i]) == True or np.isnan(SN_IR2[i]) == True):
+    if ((np.isnan(SN_IR1[i]) == True) or (np.isnan(SN_IR2[i]) == True)):
         color_IR[i] = np.nan
         IR_color_mag[i] = np.nan
         
-    elif (SN_IR1[i] < 2 or SN_IR2[i] < 2):
+    elif ((SN_IR1[i] < 2) or (SN_IR2[i] < 2)):
         color_IR[i] = np.nan
         IR_color_mag[i] = np.nan
         
 # Filtro en color Radio-IR:
     
 for i in range(data_length):
-    if (np.isnan(SN_Radio[i]) == True or np.isnan(SN_IR4[i]) == True):
+    if ((np.isnan(SN_Radio[i]) == True) or (np.isnan(SN_IR4[i]) == True)):
         color_Radio_IR[i] = np.nan
         q_24[i] = np.nan
         
-    elif (SN_Radio[i] < 2 or SN_IR4[i] < 2):
+    elif ((SN_Radio[i] < 2) or (SN_IR4[i] < 2)):
         color_Radio_IR[i] = np.nan
         q_24[i] = np.nan
         
 # Filtro en color X:
     
 for i in range(data_length):
-    if (np.isnan(SN_Hard[i]) == True or np.isnan(SN_Soft[i]) == True):
+    if ((np.isnan(SN_Hard[i]) == True) or (np.isnan(SN_Soft[i]) == True)):
         color_X[i] = np.nan
         
-    elif (SN_Hard[i] < 2 or SN_Soft[i] < 2):
-        color_IR[i] = np.nan
-        IR_color_mag[i] = np.nan
+    elif ((SN_Hard[i] < 2) or (SN_Soft[i] < 2)):
+        color_X[i] = np.nan
         
         
 # REMOVING EXTREME MASSES AND SFRs:
@@ -272,41 +320,8 @@ for i in range(data_length):
             q_24[i] = np.nan
             
           
-#%% GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS:
 
-M_x = np.linspace(min(log_M[good_M]), max(log_M[good_M]), 250)
-SFR_y = np.linspace(min(log_SFR[good_SFR]), max(log_SFR[good_SFR]), 250)
-
-d_M = M_x[1] - M_x[0]
-d_SFR = SFR_y[1] - SFR_y[0]
-
-M_grid, SFR_grid = np.meshgrid(M_x, SFR_y)
-
-def densidad(M_i, SFR_j, M_p, SFR_p, sigma_M_p, sigma_SFR_p):
-    
-    dangerous_terms = np.array([M_p, SFR_p, sigma_M_p, sigma_SFR_p])
-    term1 = (M_i - M_p)/sigma_M_p
-    term2 = (SFR_j - SFR_p)/sigma_SFR_p
-    term = -term1**2 - term2**2
-    term = term/2
-    term = np.exp(term)
-    term = term/(np.pi*sigma_M_p*sigma_SFR_p)
-    
-    if np.any(np.isnan(dangerous_terms)) == True:
-        term = np.zeros((250, 250))
-        
-    return term
-
-def get_V_max_inverse(L, sensitivity):
-    
-    z_max = 10**((L - sensitivity)/2)
-    z_max = z_max.min(0)
-    bad = np.isnan(z_max)
-    z_max = np.where(z_max > 0.01, z_max, 0.01)
-    z_max = np.where(z_max < 0.07, z_max, 0.07)
-    z_max = np.where(bad == False, z_max, np.nan)
-
-    return 1/(z_max**3)
+#%% GETTING V MAX INVERSE FOR MALMQUIST CORRECTION
 
 
 # Sensitivity (i.e. flux limit above which we have data for each band): it's been visually estimated from
@@ -321,10 +336,25 @@ sensitivity_Hard = 43.5
 sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
 
 
+def get_V_max_inverse(L, sensitivity):
+    
+    z_max = 10**((L - sensitivity)/2) # redshift computed from the equation above
+    z_max = z_max.min(0) # min of each column for the above matrix
+    bad = np.isnan(z_max) # finding nans
+    z_max = np.where(z_max > 0.01, z_max, 0.01) # if z < 0.01: z = 0.01, else z = z
+    z_max = np.where(z_max < 0.07, z_max, 0.07) # if z > 0.07: z = 0.07, else z = z
+    z_max = np.where(bad == False, z_max, np.nan) # nans still being nans
+
+    return 1/(z_max**3) # rho, or inverse max volume
+
+
 def detection_filter(L, sensitivity):
     
     for p in range(data_length):
-        if ((L[p] - 2*np.log10(redshift[p])) < sensitivity):
+        if ((np.isnan(L[p]) == True) or (np.isnan(redshift[p]) == True)):
+            L[p] = np.nan
+            
+        elif ((L[p] - 2*np.log10(redshift[p])) < sensitivity):
             L[p] = np.nan
             
     return L
@@ -333,7 +363,10 @@ def detection_filter(L, sensitivity):
 def detection_filter_color(L1, L2, color, sensitivity1, sensitivity2):
     
     for p in range(data_length):
-        if (((L1[p] - 2*np.log10(redshift[p])) < sensitivity1) or 
+        if ((np.isnan(L1[p]) == True) or (np.isnan(L2[p]) == True) or (np.isnan(redshift[p]) == True)):
+            color[p] = np.nan
+            
+        elif (((L1[p] - 2*np.log10(redshift[p])) < sensitivity1) or 
             ((L2[p] - 2*np.log10(redshift[p])) < sensitivity2)):
             color[p] = np.nan
             
@@ -372,7 +405,7 @@ good_color_X = np.isfinite(color_X)
 good_color_Radio_IR = np.isfinite(color_Radio_IR)
 good_color_IR = np.isfinite(color_IR)
 
-# ---------------------------------------------------------------------------
+# Getting V max inverse for luminosities:
 
 matrix_Soft = np.concatenate((log_L_Soft.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Soft_vector = np.array([sensitivity_Soft, sensitivity_SDSS]).reshape(matrix_Soft.shape[0], 1)
@@ -398,7 +431,7 @@ matrix_IR2 = np.concatenate((log_L_IR2.reshape(1, data_length), log_M.reshape(1,
 sens_IR2_vector = np.array([sensitivity_IR2, sensitivity_SDSS]).reshape(matrix_IR2.shape[0], 1)
 V_max_inverse_IR2 = get_V_max_inverse(matrix_IR2, sens_IR2_vector)
 
-#---------------------------------------------------------------------------------------------------
+# Getting V max inverse for colours:
 
 matrix_color_X = np.concatenate((log_L_Soft.reshape(1, data_length), log_L_Hard.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_X_vector = np.array([sensitivity_Soft, sensitivity_Hard, sensitivity_SDSS]).reshape(matrix_color_X.shape[0], 1)
@@ -413,6 +446,31 @@ sens_color_IR_vector = np.array([sensitivity_IR1, sensitivity_IR2, sensitivity_S
 V_max_inverse_color_IR = get_V_max_inverse(matrix_color_IR, sens_color_IR_vector)
 
 
+#%% GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS:
+
+M_x = np.linspace(min(log_M[good_M]), max(log_M[good_M]), 250)
+SFR_y = np.linspace(min(log_SFR[good_SFR]), max(log_SFR[good_SFR]), 250)
+
+d_M = M_x[1] - M_x[0]
+d_SFR = SFR_y[1] - SFR_y[0]
+
+M_grid, SFR_grid = np.meshgrid(M_x, SFR_y)
+
+def densidad(M_i, SFR_j, M_p, SFR_p, sigma_M_p, sigma_SFR_p):
+    
+    dangerous_terms = np.array([M_p, SFR_p, sigma_M_p, sigma_SFR_p])
+    term1 = (M_i - M_p)/sigma_M_p
+    term2 = (SFR_j - SFR_p)/sigma_SFR_p
+    term = -term1**2 - term2**2
+    term = term/2
+    term = np.exp(term)
+    term = term/(np.pi*sigma_M_p*sigma_SFR_p)
+    
+    if np.any(np.isnan(dangerous_terms)) == True:
+        term = np.zeros((250, 250))
+        
+    return term
+
 #%%  GETTING DENSITIES, AVERAGES AND DISPERSIONS FOR EACH LUMINOSITY AND COLOR:
 
 def get_outputs(L, V_max_inverse):
@@ -424,13 +482,13 @@ def get_outputs(L, V_max_inverse):
     
     for p in range(data_length):
         L_p = L[p]
-        
-        if (np.isnan(L_p) == False):
+        V_max_inverse_p = V_max_inverse[p]
+        if ((np.isnan(L_p) == False) and (np.isnan(V_max_inverse_p) == False)):
             
             densidad_p = densidad(M_i = M_grid, SFR_j = SFR_grid, M_p = log_M[p], SFR_p = log_SFR[p],
                                   sigma_M_p = min_smoothing + sigma_M[p], sigma_SFR_p = min_smoothing + sigma_SFR[p])
             
-            w_p = densidad_p*V_max_inverse[p]
+            w_p = densidad_p*V_max_inverse_p
             total_dens = total_dens + w_p
             weighted_dens = weighted_dens + L_p*w_p
             weighted_dens_2 = weighted_dens_2 + (L_p**2)*w_p
@@ -451,13 +509,13 @@ def get_color_outputs(color, V_max_inverse):
     
     for p in range(data_length):
         color_p = color[p]
-        
-        if (np.isnan(color_p) == False):
+        V_max_inverse_p = V_max_inverse[p]
+        if ((np.isnan(color_p) == False) and (np.isnan(V_max_inverse_p) == False)):
             
             densidad_p = densidad(M_i = M_grid, SFR_j = SFR_grid, M_p = log_M[p], SFR_p = log_SFR[p],
                                   sigma_M_p = min_smoothing + sigma_M[p], sigma_SFR_p = min_smoothing + sigma_SFR[p])
             
-            w_p = densidad_p*V_max_inverse[p]
+            w_p = densidad_p*V_max_inverse_p
             total_dens = total_dens + w_p
             weighted_dens = weighted_dens + color_p*w_p
             weighted_dens_2 = weighted_dens_2 + (color_p**2)*w_p
@@ -469,6 +527,22 @@ def get_color_outputs(color, V_max_inverse):
     return total_dens, color_mean, Dispersion
 
 
+dens_Soft, mean_Soft, disp_Soft = get_outputs(log_L_Soft, V_max_inverse_Soft)
+dens_Hard, mean_Hard, disp_Hard = get_outputs(log_L_Hard, V_max_inverse_Hard)
+dens_Radio, mean_Radio, disp_Radio = get_outputs(log_L_Radio, V_max_inverse_Radio)
+dens_IR4, mean_IR4, disp_IR4 = get_outputs(log_L_IR4, V_max_inverse_IR4)
+dens_IR1, mean_IR1, disp_IR1 = get_outputs(log_L_IR1, V_max_inverse_IR1)
+dens_IR2, mean_IR2, disp_IR2 = get_outputs(log_L_IR2, V_max_inverse_IR2)
+
+dens_color_X, mean_color_X, disp_color_X = get_color_outputs(color_X, V_max_inverse_color_X)
+dens_color_Radio_IR, mean_color_Radio_IR, disp_color_Radio_IR = get_color_outputs(color_Radio_IR, V_max_inverse_color_Radio_IR)
+dens_color_IR, mean_color_IR, disp_color_IR = get_color_outputs(color_IR, V_max_inverse_color_IR)
+
+plt.contourf(M_grid, SFR_grid, mean_IR1, cmap='jet', extent=(9,11,0,1))
+plt.xlim(left=9, right=11.5)
+plt.ylim(bottom=0.15, top=1)
+plt.colorbar()
+plt.show()
 
 
 

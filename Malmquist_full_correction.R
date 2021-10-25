@@ -67,8 +67,12 @@ HR <- (sdss_xmatch$Hard_flux/7 - sdss_xmatch$Soft_flux/1)/(sdss_xmatch$Hard_flux
 
 ############ LIMPIEZA DE LOS DATOS Y FILTROS EN SEÑAL-RUIDO #############
 
+
+SN_M = M/Delta_M
+SN_SFR = SFR/Delta_SFR
+
 for (i in 1:len){
-  if ((is.na(SFR[i]) == FALSE & SFR[i] == -9999) | (is.na(M[i]) == FALSE & M[i] == -9999)){ 
+  if ((is.na(SFR[i]) == TRUE) | (is.na(M[i]) == TRUE)){ 
     
     SFR[i] <- NA
     M[i] <- NA
@@ -89,7 +93,8 @@ for (i in 1:len){
     q_24[i] <- NA
     
   }
-  else if (((is.na(M[i]/Delta_M[i]) == FALSE) & ((M[i]/Delta_M[i]) < 2)) | ((is.na(SFR[i]/Delta_SFR[i]) == FALSE) & ((SFR[i]/Delta_SFR[i]) < 2))){ 
+  
+  else if ((SFR[i] == -9999) | (M[i] == -9999)){
     
     SFR[i] <- NA
     M[i] <- NA
@@ -110,6 +115,58 @@ for (i in 1:len){
     q_24[i] <- NA
     
   }
+}
+
+for (i in 1:len){
+  
+  if ((is.na(SN_M[i]) == TRUE) | (is.na(SN_SFR[i]) == TRUE)){ 
+    
+    SFR[i] <- NA
+    M[i] <- NA
+    Delta_M[i] <- NA
+    Delta_SFR[i] <- NA
+    
+    L_Radio[i] <- NA
+    L_IR[i] <- NA
+    L_IR1[i] <- NA
+    L_IR2[i] <- NA
+    L_Soft[i] <- NA
+    L_Hard[i] <- NA
+    color_W2_W1[i] <- NA
+    color_Radio_IR[i] <- NA
+    color_X[i] <- NA
+    
+    color_IR[i] <- NA
+    q_24[i] <- NA
+    
+  }
+  
+  else if ((SN_M[i] < 2) | (SN_SFR[i] < 2)){
+    
+    SFR[i] <- NA
+    M[i] <- NA
+    Delta_M[i] <- NA
+    Delta_SFR[i] <- NA
+    
+    L_Radio[i] <- NA
+    L_IR[i] <- NA
+    L_IR1[i] <- NA
+    L_IR2[i] <- NA
+    L_Soft[i] <- NA
+    L_Hard[i] <- NA
+    color_W2_W1[i] <- NA
+    color_Radio_IR[i] <- NA
+    color_X[i] <- NA
+    
+    color_IR[i] <- NA
+    q_24[i] <- NA  
+    
+  }
+}
+
+
+for (i in 1:len){
+
   if (redshift[i] < 0.01){
     
     SFR[i] <- NA
@@ -289,6 +346,113 @@ for (i in 1:len){
 }
 
 
+################# GETTING V MAX INVERSE FOR MALMQUIST CORRECTION: #################################
+
+# Sensitivity (i.e. flux limit above which we have data for each band): it's been visually estimated from
+# plot(redshift, L - 2*log10(redshift)) for each frequency
+
+sensitivity_Radio = 40.85
+sensitivity_IR = 44.8
+sensitivity_IR1 = 44.6
+sensitivity_IR2 = 44.2
+sensitivity_Soft = 42.8
+sensitivity_Hard = 43.5
+sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
+
+
+get_Vmax_inverse = function(L, sensitivity){
+  z_max = 10^((L - sensitivity)/2) 
+  z_max = apply(z_max, 2, min)
+  z_max = ifelse(z_max > 0.01, z_max, 0.01)
+  z_max = ifelse(z_max < 0.07, z_max, 0.07)
+  return(1/z_max^3)
+}
+
+
+detection_filter = function(L, sensitivity){
+  
+  for (p in 1:len){
+    
+    if ((is.na(L[p]) == TRUE) | (is.na(redshift[p]) == TRUE)){
+      L[p] = NA
+    }
+    else if (((L[p] - 2*log10(redshift[p])) < sensitivity)){
+      L[p] = NA
+    }
+  }
+  return(L)
+}
+
+
+detection_filter_color = function(L1, L2, color, sensitivity1, sensitivity2){
+  
+  for (p in 1:len){
+    
+    if ((is.na(L1[p]) == TRUE) | (is.na(L2[p]) == TRUE) | (is.na(redshift[p]) == TRUE)){
+      color[p] =NA
+    }
+    
+    else if (((L1[p] - 2*log10(redshift[p])) < sensitivity1) | ((L2[p] - 2*log10(redshift[p])) < sensitivity2)){
+      color[p] = NA
+    }
+  }
+  return(color)
+}
+
+M = detection_filter(M, sensitivity_SDSS)
+
+L_Soft = detection_filter(L_Soft, sensitivity_Soft)
+L_Hard = detection_filter(L_Hard, sensitivity_Hard)
+L_Radio = detection_filter(L_Radio, sensitivity_Radio)
+L_IR = detection_filter(L_IR, sensitivity_IR)
+L_IR1 = detection_filter(L_IR1, sensitivity_IR1)
+L_IR2 = detection_filter(L_IR2, sensitivity_IR2)
+
+color_X = detection_filter_color(L_Soft, L_Hard, color_X, sensitivity_Soft, sensitivity_Hard)
+color_Radio_IR = detection_filter_color(L_IR, L_Radio, color_Radio_IR, sensitivity_IR, sensitivity_Radio)
+color_W2_W1 = detection_filter_color(L_IR1, L_IR2, color_W2_W1, sensitivity_IR1, sensitivity_IR2)
+
+# Getting V max inverse for luminosities:
+
+matrix_Radio = matrix(c(L_Radio, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Radio_vector = c(sensitivity_Radio, sensitivity_SDSS)
+V_max_Radio_inverse = get_Vmax_inverse(matrix_Radio, sens_Radio_vector)
+
+matrix_IR = matrix(c(L_IR, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR_vector = c(sensitivity_IR, sensitivity_SDSS)
+V_max_IR_inverse = get_Vmax_inverse(matrix_IR, sens_IR_vector)
+
+matrix_IR1 = matrix(c(L_IR1, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR1_vector = c(sensitivity_IR1, sensitivity_SDSS)
+V_max_IR1_inverse = get_Vmax_inverse(matrix_IR1, sens_IR1_vector)
+
+matrix_IR2 = matrix(c(L_IR2, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_IR2_vector = c(sensitivity_IR2, sensitivity_SDSS)
+V_max_IR2_inverse = get_Vmax_inverse(matrix_IR2, sens_IR2_vector)
+
+matrix_Soft = matrix(c(L_Soft, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Soft_vector = c(sensitivity_Soft, sensitivity_SDSS)
+V_max_Soft_inverse = get_Vmax_inverse(matrix_Soft, sens_Soft_vector)
+
+matrix_Hard = matrix(c(L_Hard, M), nrow = 2, ncol = length(M), byrow = TRUE)
+sens_Hard_vector = c(sensitivity_Hard, sensitivity_SDSS)
+V_max_Hard_inverse = get_Vmax_inverse(matrix_Hard, sens_Hard_vector)
+
+# Getting V max inverse for colors
+
+matrix_color_IR = matrix(c(L_IR1, L_IR2, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_IR_vector = c(sensitivity_IR1, sensitivity_IR2, sensitivity_SDSS)
+V_max_color_IR_inverse = get_Vmax_inverse(matrix_color_IR, sens_color_IR_vector)
+
+matrix_color_Radio = matrix(c(L_Radio, L_IR, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_Radio_vector = c(sensitivity_Radio, sensitivity_IR, sensitivity_SDSS)
+V_max_color_Radio_inverse = get_Vmax_inverse(matrix_color_Radio, sens_color_Radio_vector)
+
+matrix_color_X = matrix(c(L_Hard, L_Soft, M), nrow = 3, ncol = length(M), byrow = TRUE)
+sens_color_X_vector = c(sensitivity_Hard, sensitivity_Soft, sensitivity_SDSS)
+V_max_color_X_inverse = get_Vmax_inverse(matrix_color_X, sens_color_X_vector)
+
+
 ############# GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS ##############
 
 SFR_y <- seq(min(na.omit(SFR)), max(na.omit(SFR)), (max(na.omit(SFR)) - min(na.omit(SFR)))/249)
@@ -316,67 +480,6 @@ densidad <- function(SFR_i, M_j, SFR_p, M_p, Delta_SFR_p, Delta_M_p){
 } 
 
 
-
-get_Vmax_inverse = function(L, sensitivity){
-  z_max = 10^((L - sensitivity)/2) 
-  z_max = apply(z_max, 2, min)
-  z_max = ifelse(z_max > 0.01, z_max, 0.01)
-  z_max = ifelse(z_max < 0.07, z_max, 0.07)
-  return(1/z_max^3)
-}
-
-# Sensitivity (i.e. flux limit above which we have data for each band): it's been visually estimated from
-# plot(redshift, L - 2*log10(redshift)) for each frequency
-
-sensitivity_Radio = 40.85
-sensitivity_IR = 44.8
-sensitivity_IR1 = 44.6
-sensitivity_IR2 = 44.2
-sensitivity_Soft = 42.8
-sensitivity_Hard = 43.5
-sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
-
-
-
-matrix_Radio = matrix(c(L_Radio, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_Radio_vector = c(sensitivity_Radio, sensitivity_SDSS)
-V_max_Radio_inverse = get_Vmax_inverse(matrix_Radio, sens_Radio_vector)
-
-matrix_IR = matrix(c(L_IR, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_IR_vector = c(sensitivity_IR, sensitivity_SDSS)
-V_max_IR_inverse = get_Vmax_inverse(matrix_IR, sens_IR_vector)
-
-matrix_IR1 = matrix(c(L_IR1, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_IR1_vector = c(sensitivity_IR1, sensitivity_SDSS)
-V_max_IR1_inverse = get_Vmax_inverse(matrix_IR1, sens_IR1_vector)
-
-matrix_IR2 = matrix(c(L_IR2, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_IR2_vector = c(sensitivity_IR2, sensitivity_SDSS)
-V_max_IR2_inverse = get_Vmax_inverse(matrix_IR2, sens_IR2_vector)
-
-matrix_Soft = matrix(c(L_Soft, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_Soft_vector = c(sensitivity_Soft, sensitivity_SDSS)
-V_max_Soft_inverse = get_Vmax_inverse(matrix_Soft, sens_Soft_vector)
-
-matrix_Hard = matrix(c(L_Hard, M), nrow = 2, ncol = length(M), byrow = TRUE)
-sens_Hard_vector = c(sensitivity_Hard, sensitivity_SDSS)
-V_max_Hard_inverse = get_Vmax_inverse(matrix_Hard, sens_Hard_vector)
-
-
-
-matrix_color_IR = matrix(c(L_IR1, L_IR2, M), nrow = 3, ncol = length(M), byrow = TRUE)
-sens_color_IR_vector = c(sensitivity_IR1, sensitivity_IR2, sensitivity_SDSS)
-V_max_color_IR_inverse = get_Vmax_inverse(matrix_color_IR, sens_color_IR_vector)
-
-matrix_color_Radio = matrix(c(L_Radio, L_IR, M), nrow = 3, ncol = length(M), byrow = TRUE)
-sens_color_Radio_vector = c(sensitivity_Radio, sensitivity_IR, sensitivity_SDSS)
-V_max_color_Radio_inverse = get_Vmax_inverse(matrix_color_Radio, sens_color_Radio_vector)
-
-matrix_color_X = matrix(c(L_Hard, L_Soft, M), nrow = 3, ncol = length(M), byrow = TRUE)
-sens_color_X_vector = c(sensitivity_Hard, sensitivity_Soft, sensitivity_SDSS)
-V_max_color_X_inverse = get_Vmax_inverse(matrix_color_X, sens_color_X_vector)
-
-
 # Getting densities, averages and dispersions for each luminosity and color:
 
 
@@ -389,11 +492,12 @@ get_outputs = function(V_max_inverse, L, sensitivity, peso_total, densidad_pesad
   
   for (p in 1:len){
     L_p = L[p]
+    V_max_inverse_p = V_max_inverse[p]
     
-    if ((is.na(L_p) == FALSE) & (L_p - 2*log10(redshift[p])) > sensitivity){
+    if ((is.na(L_p) == FALSE) & (is.na(V_max_inverse_p) == FALSE)){
       densidad_p = densidad(SFR_i = SFR_grid, M_j = M_grid, SFR_p = SFR[p], M_p = M[p],
                             Delta_SFR_p = suavizado_minimo + Delta_SFR[p], Delta_M_p = suavizado_minimo + Delta_M[p])
-      w_p = densidad_p*V_max_inverse[p]
+      w_p = densidad_p*V_max_inverse_p
       peso_total = peso_total + w_p
       densidad_pesada = densidad_pesada + L_p*w_p
       densidad_pesada_2 = densidad_pesada_2 + L_p^2*w_p
@@ -421,13 +525,13 @@ get_color_outputs = function(V_max_inverse, L1, L2, color, sensitivity1, sensiti
     L1_p = L1[p]
     L2_p = L2[p]
     color_p = color[p]
+    V_max_inverse_p = V_max_inverse[p]
     
-    if (((is.na(L1_p) == FALSE) & (L1_p - 2*log10(redshift[p])) > sensitivity1) & 
-        ((is.na(L2_p) == FALSE) & (L2_p - 2*log10(redshift[p])) > sensitivity2)){
+    if ((is.na(color_p) == FALSE) & (is.na(V_max_inverse_p) == FALSE)){
       
       densidad_p = densidad(SFR_i = SFR_grid, M_j = M_grid, SFR_p = SFR[p], M_p = M[p],
                             Delta_SFR_p = suavizado_minimo + Delta_SFR[p], Delta_M_p = suavizado_minimo + Delta_M[p])
-      w_p = densidad_p*V_max_inverse[p]
+      w_p = densidad_p*V_max_inverse_p
       peso_total = peso_total + w_p
       densidad_pesada = densidad_pesada + color_p*w_p
       densidad_pesada_2 = densidad_pesada_2 + color_p^2*w_p
@@ -468,6 +572,7 @@ out_color_X = get_color_outputs(V_max_color_X_inverse, L_Soft, L_Hard, color_X,
 ###################### GETTING ISOCONTOUR LEVELS FOR THE MASS ########################
 
 library(pracma)
+
 library(colorRamps)
 library(fields)
 library(scales)
@@ -518,7 +623,7 @@ contours_color_X = get_isocontour_levels(out_color_X$Density, d_M, d_SFR)
 
 get_plots = function(L, contours, title){
   
-  image.plot(M_X, SFR_y, L, col = matlab.like(15), ylim = c(-2, 1), xlim = c(8.5, 11.5),
+  image.plot(M_X, SFR_y, L, col = matlab.like(15), ylim = c(0.15, 1), xlim = c(9, 11.5),
              xlab = 'log[M* (solar masses)]', ylab = 'log[SFR (solar masses/yr)]', main = title)
   contour(M_X, SFR_y, contours, levels = .9, add = TRUE, lty = 3)
   contour(M_X, SFR_y, contours, levels = .5, add = TRUE, lty = 2)
@@ -829,7 +934,7 @@ activeness = function(lum, xlabel, colour, V_max_inverse){
 
 activeness(L_excess_IR2_copy, 'Luminosity excess (IR W2 band)', 'red', V_max_IR2_inverse_copy)
 activeness(L_excess_Radio_copy, 'Luminosity excess (Radio)', 'green', V_max_Radio_inverse_copy)
-activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue', V_max_Hard_inverse)
+activeness(L_excess_Hard_copy, 'Luminosity excess (Hard X-Rays)', 'blue', V_max_Hard_inverse)
 
 activeness(color_W2_W1_excess_copy, 'IR color excess', 'red', V_max_color_IR_inverse_copy)
 activeness(color_Radio_IR_excess_copy, 'Radio-IR color excess', 'green', V_max_color_Radio_inverse_copy)

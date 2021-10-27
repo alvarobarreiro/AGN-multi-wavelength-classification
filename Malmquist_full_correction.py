@@ -6,18 +6,29 @@ Created on Wed Oct 20 20:33:24 2021
 """
 
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from astropy.table import Table
 
 
-sdss_xmatch = pd.read_csv('final_xmatch.csv', keep_default_na=True)
-print(sdss_xmatch.columns)
-data_length = len(sdss_xmatch['col1'])
-redshift = sdss_xmatch['Z']
-log_SFR = sdss_xmatch['sfr_tot_p50_1'].values
+# sdss_xmatch = pd.read_csv('final_xmatch.csv', keep_default_na=True)
+sdss_xmatch = Table.read('final_xmatch.csv')
+# print(sdss_xmatch.colnames)
+data_length = len(sdss_xmatch)
+
+# %% Sample selection
+
+redshift = np.array(sdss_xmatch['Z'])
+z_min = 0.01
+z_max = 0.07
+good_redshift = (redshift > z_min) & (redshift < z_max)
+
+log_SFR = np.array(sdss_xmatch['sfr_tot_p50_1'])
+log_M = np.array(sdss_xmatch['lgm_tot_p50'])
+
+# %%
+
 good_SFR = np.isfinite(log_SFR)
-log_M = sdss_xmatch['lgm_tot_p50'].values
 good_M = np.isfinite(log_M)
 sigma_SFR = (sdss_xmatch['sfr_tot_p84_1'].values - sdss_xmatch['sfr_tot_p16_1'].values)/2
 sigma_M = (sdss_xmatch['lgm_tot_p84'].values - sdss_xmatch['lgm_tot_p16'].values)/2
@@ -79,16 +90,16 @@ SN_SFR = log_SFR/sigma_SFR
 SN_M = log_M/sigma_M
 
 for i in range(data_length):
-    
+
     if ((np.isnan(log_SFR[i]) == True) or (np.isnan(log_M[i]) == True)):
-        
+
         log_SFR[i] = np.nan
         log_M[i] = np.nan
         sigma_SFR[i] = np.nan
         sigma_M[i] = np.nan
         SN_SFR[i] = np.nan
         SN_M[i] = np.nan
-        
+
         log_L_Radio[i] = np.nan
         log_L_IR4[i] = np.nan
         log_L_IR1[i] = np.nan
@@ -98,19 +109,19 @@ for i in range(data_length):
         color_IR[i] = np.nan
         color_Radio_IR[i] = np.nan
         color_X[i] = np.nan
-        
+
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
+
     elif ((log_SFR[i] == -9999) or (log_M[i] == -9999)):
-        
+
         log_SFR[i] = np.nan
         log_M[i] = np.nan
         sigma_SFR[i] = np.nan
         sigma_M[i] = np.nan
         SN_SFR[i] = np.nan
         SN_M[i] = np.nan
-        
+
         log_L_Radio[i] = np.nan
         log_L_IR4[i] = np.nan
         log_L_IR1[i] = np.nan
@@ -120,20 +131,20 @@ for i in range(data_length):
         color_IR[i] = np.nan
         color_Radio_IR[i] = np.nan
         color_X[i] = np.nan
-        
+
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
+
 
 for i in range(data_length):
-        
+
     if ((np.isnan(SN_M[i]) == True) or (np.isnan(SN_SFR[i]) == True)):
-        
+
         log_SFR[i] = np.nan
         log_M[i] = np.nan
         sigma_SFR[i] = np.nan
         sigma_M[i] = np.nan
-        
+
         log_L_Radio[i] = np.nan
         log_L_IR4[i] = np.nan
         log_L_IR1[i] = np.nan
@@ -143,17 +154,17 @@ for i in range(data_length):
         color_IR[i] = np.nan
         color_Radio_IR[i] = np.nan
         color_X[i] = np.nan
-        
+
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
+
     elif ((SN_M[i] < 2) or (SN_SFR[i] < 2)):
-        
+
         log_SFR[i] = np.nan
         log_M[i] = np.nan
         sigma_SFR[i] = np.nan
         sigma_M[i] = np.nan
-        
+
         log_L_Radio[i] = np.nan
         log_L_IR4[i] = np.nan
         log_L_IR1[i] = np.nan
@@ -163,22 +174,22 @@ for i in range(data_length):
         color_IR[i] = np.nan
         color_Radio_IR[i] = np.nan
         color_X[i] = np.nan
-        
+
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
-        
+
+
 for i in range(data_length):
-        
+
     if redshift[i] < 0.01:
-        
+
         log_SFR[i] = np.nan
         log_M[i] = np.nan
         sigma_SFR[i] = np.nan
         sigma_M[i] = np.nan
         SN_SFR[i] = np.nan
         SN_M[i] = np.nan
-        
+
         log_L_Radio[i] = np.nan
         log_L_IR4[i] = np.nan
         log_L_IR1[i] = np.nan
@@ -188,10 +199,10 @@ for i in range(data_length):
         color_IR[i] = np.nan
         color_Radio_IR[i] = np.nan
         color_X[i] = np.nan
-        
+
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
+
 
 sigma_Soft = sdss_xmatch['Soft_flux_error'].values
 SN_Soft = sdss_xmatch['Soft_flux'].values/sigma_Soft
@@ -213,99 +224,99 @@ SN_IR2 = sdss_xmatch['IR2_flux_(erg/s/cm2/Hz)']/sigma_IR2
 
 
 # Filtro en flujo en rayos X blandos:
-    
+
 for i in range(data_length):
     if np.isnan(SN_Soft[i]) == True:
         log_L_Soft[i] = np.nan
-        
+
     elif SN_Soft[i] < 2:
         log_L_Soft[i] = np.nan
-        
+
 # Filtro en flujo en rayos X duros:
-    
+
 for i in range(data_length):
     if np.isnan(SN_Hard[i]) == True:
         log_L_Hard[i] = np.nan
-        
+
     elif SN_Hard[i] < 2:
         log_L_Hard[i] = np.nan
-        
+
 # Filtro en flujo en Radio:
-    
+
 for i in range(data_length):
     if np.isnan(SN_Radio[i]) == True:
         log_L_Radio[i] = np.nan
-        
+
     elif SN_Radio[i] < 2:
         log_L_Radio[i] = np.nan
-        
+
 # Filtro en flujo en IR (banda W4):
-    
+
 for i in range(data_length):
     if np.isnan(SN_IR4[i]) == True:
         log_L_IR4[i] = np.nan
-        
+
     elif SN_IR4[i] < 2:
         log_L_IR4[i] = np.nan
-        
+
 # Filtro en flujo en IR (banda W1):
-    
+
 for i in range(data_length):
     if np.isnan(SN_IR1[i]) == True:
         log_L_IR1[i] = np.nan
-        
+
     elif SN_IR1[i] < 2:
         log_L_IR1[i] = np.nan
-        
+
 # Filtro en flujo en IR (banda W2):
-    
+
 for i in range(data_length):
     if np.isnan(SN_IR2[i]) == True:
         log_L_IR2[i] = np.nan
-        
+
     elif SN_IR2[i] < 2:
         log_L_IR2[i] = np.nan
-        
-        
+
+
 # Filtro en color IR:
-    
+
 for i in range(data_length):
     if ((np.isnan(SN_IR1[i]) == True) or (np.isnan(SN_IR2[i]) == True)):
         color_IR[i] = np.nan
         IR_color_mag[i] = np.nan
-        
+
     elif ((SN_IR1[i] < 2) or (SN_IR2[i] < 2)):
         color_IR[i] = np.nan
         IR_color_mag[i] = np.nan
-        
+
 # Filtro en color Radio-IR:
-    
+
 for i in range(data_length):
     if ((np.isnan(SN_Radio[i]) == True) or (np.isnan(SN_IR4[i]) == True)):
         color_Radio_IR[i] = np.nan
         q_24[i] = np.nan
-        
+
     elif ((SN_Radio[i] < 2) or (SN_IR4[i] < 2)):
         color_Radio_IR[i] = np.nan
         q_24[i] = np.nan
-        
+
 # Filtro en color X:
-    
+
 for i in range(data_length):
     if ((np.isnan(SN_Hard[i]) == True) or (np.isnan(SN_Soft[i]) == True)):
         color_X[i] = np.nan
-        
+
     elif ((SN_Hard[i] < 2) or (SN_Soft[i] < 2)):
         color_X[i] = np.nan
-        
-        
+
+
 # REMOVING EXTREME MASSES AND SFRs:
-    
+
 for i in range(data_length):
-    
+
     if (np.isnan(log_M[i]) == False and np.isnan(log_SFR[i]) == False):
         if (log_M[i] < 8.5 or log_M[i] > 11.5 or log_SFR[i] < -2 or log_SFR[i] > 1):
-            
+
             log_L_Radio[i] = np.nan
             log_L_IR4[i] = np.nan
             log_L_IR1[i] = np.nan
@@ -315,11 +326,11 @@ for i in range(data_length):
             color_IR[i] = np.nan
             color_Radio_IR[i] = np.nan
             color_X[i] = np.nan
-            
+
             IR_color_mag[i] = np.nan
             q_24[i] = np.nan
-            
-          
+
+
 
 #%% GETTING V MAX INVERSE FOR MALMQUIST CORRECTION
 
@@ -337,7 +348,7 @@ sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
 
 
 def get_V_max_inverse(L, sensitivity):
-    
+
     z_max = 10**((L - sensitivity)/2) # redshift computed from the equation above
     z_max = z_max.min(0) # min of each column for the above matrix
     bad = np.isnan(z_max) # finding nans
@@ -349,27 +360,27 @@ def get_V_max_inverse(L, sensitivity):
 
 
 def detection_filter(L, sensitivity):
-    
+
     for p in range(data_length):
         if ((np.isnan(L[p]) == True) or (np.isnan(redshift[p]) == True)):
             L[p] = np.nan
-            
+
         elif ((L[p] - 2*np.log10(redshift[p])) < sensitivity):
             L[p] = np.nan
-            
+
     return L
 
 
 def detection_filter_color(L1, L2, color, sensitivity1, sensitivity2):
-    
+
     for p in range(data_length):
         if ((np.isnan(L1[p]) == True) or (np.isnan(L2[p]) == True) or (np.isnan(redshift[p]) == True)):
             color[p] = np.nan
-            
-        elif (((L1[p] - 2*np.log10(redshift[p])) < sensitivity1) or 
+
+        elif (((L1[p] - 2*np.log10(redshift[p])) < sensitivity1) or
             ((L2[p] - 2*np.log10(redshift[p])) < sensitivity2)):
             color[p] = np.nan
-            
+
     return color
 
 
@@ -457,7 +468,7 @@ d_SFR = SFR_y[1] - SFR_y[0]
 M_grid, SFR_grid = np.meshgrid(M_x, SFR_y)
 
 def densidad(M_i, SFR_j, M_p, SFR_p, sigma_M_p, sigma_SFR_p):
-    
+
     dangerous_terms = np.array([M_p, SFR_p, sigma_M_p, sigma_SFR_p])
     term1 = (M_i - M_p)/sigma_M_p
     term2 = (SFR_j - SFR_p)/sigma_SFR_p
@@ -465,65 +476,65 @@ def densidad(M_i, SFR_j, M_p, SFR_p, sigma_M_p, sigma_SFR_p):
     term = term/2
     term = np.exp(term)
     term = term/(np.pi*sigma_M_p*sigma_SFR_p)
-    
+
     if np.any(np.isnan(dangerous_terms)) == True:
         term = np.zeros((250, 250))
-        
+
     return term
 
 #%%  GETTING DENSITIES, AVERAGES AND DISPERSIONS FOR EACH LUMINOSITY AND COLOR:
 
 def get_outputs(L, V_max_inverse):
-    
+
     min_smoothing = 0.1
     total_dens = np.zeros((250, 250))
     weighted_dens = np.zeros((250, 250))
     weighted_dens_2 = np.zeros((250, 250))
-    
+
     for p in range(data_length):
         L_p = L[p]
         V_max_inverse_p = V_max_inverse[p]
         if ((np.isnan(L_p) == False) and (np.isnan(V_max_inverse_p) == False)):
-            
+
             densidad_p = densidad(M_i = M_grid, SFR_j = SFR_grid, M_p = log_M[p], SFR_p = log_SFR[p],
                                   sigma_M_p = min_smoothing + sigma_M[p], sigma_SFR_p = min_smoothing + sigma_SFR[p])
-            
+
             w_p = densidad_p*V_max_inverse_p
             total_dens = total_dens + w_p
             weighted_dens = weighted_dens + L_p*w_p
             weighted_dens_2 = weighted_dens_2 + (L_p**2)*w_p
-            
+
     L_mean = weighted_dens/total_dens
     L_mean_squared = weighted_dens_2/total_dens
     Dispersion = np.sqrt(L_mean_squared - L_mean**2)
-    
+
     return total_dens, L_mean, Dispersion
 
 
 def get_color_outputs(color, V_max_inverse):
-    
+
     min_smoothing = 0.1
     total_dens = np.zeros((250, 250))
     weighted_dens = np.zeros((250, 250))
     weighted_dens_2 = np.zeros((250, 250))
-    
+
     for p in range(data_length):
         color_p = color[p]
         V_max_inverse_p = V_max_inverse[p]
         if ((np.isnan(color_p) == False) and (np.isnan(V_max_inverse_p) == False)):
-            
+
             densidad_p = densidad(M_i = M_grid, SFR_j = SFR_grid, M_p = log_M[p], SFR_p = log_SFR[p],
                                   sigma_M_p = min_smoothing + sigma_M[p], sigma_SFR_p = min_smoothing + sigma_SFR[p])
-            
+
             w_p = densidad_p*V_max_inverse_p
             total_dens = total_dens + w_p
             weighted_dens = weighted_dens + color_p*w_p
             weighted_dens_2 = weighted_dens_2 + (color_p**2)*w_p
-            
+
     color_mean = weighted_dens/total_dens
     color_mean_squared = weighted_dens_2/total_dens
     Dispersion = np.sqrt(color_mean_squared - color_mean**2)
-    
+
     return total_dens, color_mean, Dispersion
 
 
@@ -543,6 +554,3 @@ plt.xlim(left=9, right=11.5)
 plt.ylim(bottom=0.15, top=1)
 plt.colorbar()
 plt.show()
-
-
-

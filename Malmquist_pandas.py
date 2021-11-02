@@ -716,7 +716,7 @@ color_X_excess = color_X - color_X_mean
 #%% ACTIVENESS FUNCTION AND PLOTS
 
 
-def activeness(lum, xlabel, colour, V_max_inverse):
+def activeness(lum, xlabel, V_max_inverse):
     
     good_length = len(lum[np.isfinite(lum)])
     sorted_indices = np.argsort(lum)[0:good_length]
@@ -731,33 +731,59 @@ def activeness(lum, xlabel, colour, V_max_inverse):
     
     rho = total_dens
     z = np.linspace(np.min(sorted_lum), np.max(sorted_lum), 300)
-    interpolation = np.interp(z, sorted_lum, cum_dens)
+    interpolation = np.interp(z, sorted_lum, cum_dens, left = 0, right = 1)
     rho_greater = rho - interpolation
     rho_normal = np.zeros(len(rho_greater))
     
     for i in range(len(z)):
         if z[i] <= pivot_point:
-            rho_symmetric = 2*np.interp(pivot_point, sorted_lum, cum_dens) - np.interp(z[i], sorted_lum, cum_dens)
+            rho_symmetric = 2*np.interp(pivot_point, sorted_lum, cum_dens, left = 0, right = 1) - np.interp(z[i], sorted_lum, cum_dens, left = 0, right=1)
             
         else:
-            rho_symmetric = np.interp((2*pivot_point - z[i]), sorted_lum, cum_dens)
+            rho_symmetric = np.interp((2*pivot_point - z[i]), sorted_lum, cum_dens, left = 0, right = 1)
         
         rho_normal[i] = np.minimum(rho_symmetric, rho_greater[i])
         
         
     rho_active = rho_greater - rho_normal
     f_active = rho_active/rho_greater
-    position = np.where(f_active >= 0.5)
+    position = np.where(f_active >= 0.5)[0]
     position = np.min(position)
-    z_active = f_active[position]
+    z_active = z[position]
     
+
     plt.yscale('log') 
     plt.plot(z, rho_greater, color = 'black')
     plt.plot(z, rho_normal, color = 'blue')
     plt.plot(z, rho_active, color = 'red')
     plt.axvline(x = z_active, linestyle='--', color='black')
+    plt.xlabel(xlabel)
+    plt.ylabel('normalized density')
     
     return z_active
 
-activeness(L_excess_Radio, 'Luminosity excess (Radio)', 'green', V_max_inverse_Radio)
-activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', 'blue', V_max_inverse_Hard)
+
+#%% COMPUTING CONVERSION PARAMETERS BETWEEN OUR COLORS AND THOSE IN LITERATURE:
+    
+    
+W1_W2_norm = np.log10((171*3.4*1e-6)/(309*4.6*1e-6)) # cociente entre flujos cero de WISE
+nuradio_nu24 = np.log10((1.4*1e9)/((3*1e8)/(22.1*1e-6))) # cociente de frecuencias (1.4 GHz/22.1 micras)
+
+
+#%% COMPUTING THRESHOLDS FOR EACH LUMINOSITY AND COLOR:
+    
+    
+threshold_color_IR_Stern = 0.4*0.8 + W1_W2_norm # Stern threshold ---> W1-W2 > 0.8
+threshold_color_IR_Assef = 0.4*0.5 + W1_W2_norm # Assef threshold ---> W1-W2 > 0.5
+threshold_color_Radio_IR_Ibar = 0.23 + nuradio_nu24 # Ibar threshold ---> q_24 < -0.23
+threshold_Radio_loud = 40 # L > 10^40 erg/s ---> Radio-loud AGN
+threshold_Hard_lit = 42 # L > 10^42 erg/s ---> AGN
+    
+threshold_Hard_excess = activeness(L_excess_Hard, 'Luminosity excess (Hard X-Rays)', V_max_inverse_Hard)
+threshold_Radio_excess = activeness(L_excess_Radio, 'Luminosity excess (Radio)', V_max_inverse_Radio)
+threshold_IR2_excess = activeness(L_excess_IR2, 'Luminosity excess (IR, W2 band)', V_max_inverse_IR2)
+
+threshold_color_X_excess = activeness(color_X_excess, 'color excess (X-Rays)', V_max_inverse_color_X)
+threshold_color_Radio_IR_excess = activeness(color_Radio_IR_excess, 'color excess (Radio-IR W4 band)', V_max_inverse_color_Radio_IR)
+threshold_color_IR_excess = activeness(color_IR_excess, 'color excess (IR)', V_max_inverse_color_IR)
+

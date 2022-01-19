@@ -8,7 +8,7 @@ Created on Wed Oct 20 20:33:24 2021
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib import gridspec
+#from matplotlib import gridspec
 
 
 sdss_xmatch = pd.read_csv('final_xmatch.csv', keep_default_na=True)
@@ -167,7 +167,7 @@ for i in range(data_length):
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan'''
         
-        
+'''        
 for i in range(data_length):
         
     if redshift[i] < 0.01:
@@ -191,7 +191,7 @@ for i in range(data_length):
         
         IR_color_mag[i] = np.nan
         q_24[i] = np.nan
-        
+        '''
 
 sigma_Soft = sdss_xmatch['Soft_flux_error'].values
 SN_Soft = sdss_xmatch['Soft_flux'].values/sigma_Soft
@@ -339,13 +339,15 @@ sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
 def get_V_max_inverse(L, sensitivity):
     
     z_max = 10**((L - sensitivity)/2) # redshift computed from the equation above
+    #z_max = z_max.min(0).clip(0.01,0.07) 
     z_max = z_max.min(0) # min of each column for the above matrix
+    num_condition = len(np.where(z_max < 0.01)[0])
     bad = np.isnan(z_max) # finding nans
-    z_max = np.where(z_max > 0.01, z_max, 0.01) # if z < 0.01: z = 0.01, else z = z
+    # z_max = np.where(z_max > 0.01, z_max, 0.01) # if z < 0.01: z = 0.01, else z = z
     z_max = np.where(z_max < 0.07, z_max, 0.07) # if z > 0.07: z = 0.07, else z = z
     z_max = np.where(bad == False, z_max, np.nan) # nans still being nans
 
-    return 1/(z_max**3) # rho, or inverse max volume
+    return 1/(z_max**3 - 1e-9), num_condition # rho, or inverse max volume
 
 
 def detection_filter(L, sensitivity):
@@ -409,41 +411,41 @@ good_color_IR = np.isfinite(color_IR)
 
 matrix_Soft = np.concatenate((log_L_Soft.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Soft_vector = np.array([sensitivity_Soft, sensitivity_SDSS]).reshape(matrix_Soft.shape[0], 1)
-V_max_inverse_Soft = get_V_max_inverse(matrix_Soft, sens_Soft_vector)
+V_max_inverse_Soft, num_soft = get_V_max_inverse(matrix_Soft, sens_Soft_vector)
 
 matrix_Hard = np.concatenate((log_L_Hard.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Hard_vector = np.array([sensitivity_Hard, sensitivity_SDSS]).reshape(matrix_Hard.shape[0], 1)
-V_max_inverse_Hard = get_V_max_inverse(matrix_Hard, sens_Hard_vector)
+V_max_inverse_Hard, num_hard = get_V_max_inverse(matrix_Hard, sens_Hard_vector)
 
 matrix_Radio = np.concatenate((log_L_Radio.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Radio_vector = np.array([sensitivity_Radio, sensitivity_SDSS]).reshape(matrix_Radio.shape[0], 1)
-V_max_inverse_Radio = get_V_max_inverse(matrix_Radio, sens_Radio_vector)
+V_max_inverse_Radio, num_radio = get_V_max_inverse(matrix_Radio, sens_Radio_vector)
 
 matrix_IR4 = np.concatenate((log_L_IR4.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR4_vector = np.array([sensitivity_IR4, sensitivity_SDSS]).reshape(matrix_IR4.shape[0], 1)
-V_max_inverse_IR4 = get_V_max_inverse(matrix_IR4, sens_IR4_vector)
+V_max_inverse_IR4, num_ir4 = get_V_max_inverse(matrix_IR4, sens_IR4_vector)
 
 matrix_IR1 = np.concatenate((log_L_IR1.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR1_vector = np.array([sensitivity_IR1, sensitivity_SDSS]).reshape(matrix_IR1.shape[0], 1)
-V_max_inverse_IR1 = get_V_max_inverse(matrix_IR1, sens_IR1_vector)
+V_max_inverse_IR1, num_ir1 = get_V_max_inverse(matrix_IR1, sens_IR1_vector)
 
 matrix_IR2 = np.concatenate((log_L_IR2.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR2_vector = np.array([sensitivity_IR2, sensitivity_SDSS]).reshape(matrix_IR2.shape[0], 1)
-V_max_inverse_IR2 = get_V_max_inverse(matrix_IR2, sens_IR2_vector)
+V_max_inverse_IR2, num_ir2 = get_V_max_inverse(matrix_IR2, sens_IR2_vector)
 
 # Getting V max inverse for colours:
 
 matrix_color_X = np.concatenate((log_L_Soft.reshape(1, data_length), log_L_Hard.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_X_vector = np.array([sensitivity_Soft, sensitivity_Hard, sensitivity_SDSS]).reshape(matrix_color_X.shape[0], 1)
-V_max_inverse_color_X = get_V_max_inverse(matrix_color_X, sens_color_X_vector)
+V_max_inverse_color_X, num_color_x = get_V_max_inverse(matrix_color_X, sens_color_X_vector)
 
 matrix_color_Radio_IR = np.concatenate((log_L_IR4.reshape(1, data_length), log_L_Radio.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_Radio_IR_vector = np.array([sensitivity_IR4, sensitivity_Radio, sensitivity_SDSS]).reshape(matrix_color_Radio_IR.shape[0], 1)
-V_max_inverse_color_Radio_IR = get_V_max_inverse(matrix_color_Radio_IR, sens_color_Radio_IR_vector)
+V_max_inverse_color_Radio_IR, num_color_radio = get_V_max_inverse(matrix_color_Radio_IR, sens_color_Radio_IR_vector)
 
 matrix_color_IR = np.concatenate((log_L_IR1.reshape(1, data_length), log_L_IR2.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_IR_vector = np.array([sensitivity_IR1, sensitivity_IR2, sensitivity_SDSS]).reshape(matrix_color_IR.shape[0], 1)
-V_max_inverse_color_IR = get_V_max_inverse(matrix_color_IR, sens_color_IR_vector)
+V_max_inverse_color_IR, num_color_ir = get_V_max_inverse(matrix_color_IR, sens_color_IR_vector)
 
 
 #%% GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS:
@@ -631,6 +633,9 @@ plot_IR4_disp = get_plots(disp_IR4, contours_IR4, 'Dispersion IR (W4 band)')
 
 plot_IR1 = get_plots(mean_IR1, contours_IR1, '<log L> IR (W1 band)')
 plot_IR1_disp = get_plots(disp_IR1, contours_IR1, 'Dispersion IR (W1 band)')
+
+plot_IR2 = get_plots(mean_IR2, contours_IR2, '<log L> IR (W2 band)')
+plot_IR2_disp = get_plots(disp_IR2, contours_IR2, 'Dispersion IR (W2 band)')
 
 
 

@@ -336,18 +336,23 @@ sensitivity_Hard = 43.5
 sensitivity_SDSS = 12 # plot(redshift, M - 2*log10(redshift)) in this case
 
 
-def get_V_max_inverse(L, sensitivity):
+def get_V_max_inverse(L, luminosities, sensitivity):
     
     z_max = 10**((L - sensitivity)/2) # redshift computed from the equation above
-    #z_max = z_max.min(0).clip(0.01,0.07) 
+    # z_max = z_max.min(0).clip(0.01,0.07) 
     z_max = z_max.min(0) # min of each column for the above matrix
-    num_condition = len(np.where(z_max < 0.01)[0])
+    faint_obj = np.where(z_max < 0.015)[0]
+    z_max[faint_obj] = np.nan
+    
+    for i in range(len(luminosities)): # filter
+        luminosities[i][faint_obj] = np.nan # we exclude every object with z_max < 0.015
+        
     bad = np.isnan(z_max) # finding nans
     # z_max = np.where(z_max > 0.01, z_max, 0.01) # if z < 0.01: z = 0.01, else z = z
     z_max = np.where(z_max < 0.07, z_max, 0.07) # if z > 0.07: z = 0.07, else z = z
     z_max = np.where(bad == False, z_max, np.nan) # nans still being nans
 
-    return 1/(z_max**3 - 1e-9), num_condition # rho, or inverse max volume
+    return 1/(z_max**3 - 1e-9) # rho, or inverse max volume
 
 
 def detection_filter(L, sensitivity):
@@ -411,41 +416,41 @@ good_color_IR = np.isfinite(color_IR)
 
 matrix_Soft = np.concatenate((log_L_Soft.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Soft_vector = np.array([sensitivity_Soft, sensitivity_SDSS]).reshape(matrix_Soft.shape[0], 1)
-V_max_inverse_Soft, num_soft = get_V_max_inverse(matrix_Soft, sens_Soft_vector)
+V_max_inverse_Soft = get_V_max_inverse(matrix_Soft, (log_L_Soft, log_M), sens_Soft_vector)
 
 matrix_Hard = np.concatenate((log_L_Hard.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Hard_vector = np.array([sensitivity_Hard, sensitivity_SDSS]).reshape(matrix_Hard.shape[0], 1)
-V_max_inverse_Hard, num_hard = get_V_max_inverse(matrix_Hard, sens_Hard_vector)
+V_max_inverse_Hard = get_V_max_inverse(matrix_Hard, (log_L_Hard, log_M), sens_Hard_vector)
 
 matrix_Radio = np.concatenate((log_L_Radio.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_Radio_vector = np.array([sensitivity_Radio, sensitivity_SDSS]).reshape(matrix_Radio.shape[0], 1)
-V_max_inverse_Radio, num_radio = get_V_max_inverse(matrix_Radio, sens_Radio_vector)
+V_max_inverse_Radio = get_V_max_inverse(matrix_Radio, (log_L_Radio, log_M), sens_Radio_vector)
 
 matrix_IR4 = np.concatenate((log_L_IR4.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR4_vector = np.array([sensitivity_IR4, sensitivity_SDSS]).reshape(matrix_IR4.shape[0], 1)
-V_max_inverse_IR4, num_ir4 = get_V_max_inverse(matrix_IR4, sens_IR4_vector)
+V_max_inverse_IR4 = get_V_max_inverse(matrix_IR4, (log_L_IR4, log_M), sens_IR4_vector)
 
 matrix_IR1 = np.concatenate((log_L_IR1.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR1_vector = np.array([sensitivity_IR1, sensitivity_SDSS]).reshape(matrix_IR1.shape[0], 1)
-V_max_inverse_IR1, num_ir1 = get_V_max_inverse(matrix_IR1, sens_IR1_vector)
+V_max_inverse_IR1 = get_V_max_inverse(matrix_IR1, (log_L_IR1, log_M), sens_IR1_vector)
 
 matrix_IR2 = np.concatenate((log_L_IR2.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_IR2_vector = np.array([sensitivity_IR2, sensitivity_SDSS]).reshape(matrix_IR2.shape[0], 1)
-V_max_inverse_IR2, num_ir2 = get_V_max_inverse(matrix_IR2, sens_IR2_vector)
+V_max_inverse_IR2 = get_V_max_inverse(matrix_IR2, (log_L_IR2, log_M), sens_IR2_vector)
 
 # Getting V max inverse for colours:
 
 matrix_color_X = np.concatenate((log_L_Soft.reshape(1, data_length), log_L_Hard.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_X_vector = np.array([sensitivity_Soft, sensitivity_Hard, sensitivity_SDSS]).reshape(matrix_color_X.shape[0], 1)
-V_max_inverse_color_X, num_color_x = get_V_max_inverse(matrix_color_X, sens_color_X_vector)
+V_max_inverse_color_X = get_V_max_inverse(matrix_color_X, (log_L_Soft, log_L_Hard, log_M), sens_color_X_vector)
 
 matrix_color_Radio_IR = np.concatenate((log_L_IR4.reshape(1, data_length), log_L_Radio.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_Radio_IR_vector = np.array([sensitivity_IR4, sensitivity_Radio, sensitivity_SDSS]).reshape(matrix_color_Radio_IR.shape[0], 1)
-V_max_inverse_color_Radio_IR, num_color_radio = get_V_max_inverse(matrix_color_Radio_IR, sens_color_Radio_IR_vector)
+V_max_inverse_color_Radio_IR = get_V_max_inverse(matrix_color_Radio_IR, (log_L_Radio, log_L_IR4, log_M), sens_color_Radio_IR_vector)
 
 matrix_color_IR = np.concatenate((log_L_IR1.reshape(1, data_length), log_L_IR2.reshape(1, data_length), log_M.reshape(1, data_length)), axis=0)
 sens_color_IR_vector = np.array([sensitivity_IR1, sensitivity_IR2, sensitivity_SDSS]).reshape(matrix_color_IR.shape[0], 1)
-V_max_inverse_color_IR, num_color_ir = get_V_max_inverse(matrix_color_IR, sens_color_IR_vector)
+V_max_inverse_color_IR = get_V_max_inverse(matrix_color_IR, (log_L_IR1, log_L_IR2, log_M), sens_color_IR_vector)
 
 
 #%% GRIDS Y FUNCIONES PARA EL CÁLCULO DE LOS KERNEL ESTIMATORS:
@@ -733,7 +738,7 @@ def activeness(lum, xlabel, V_max_inverse):
     total_dens = np.max(cum_dens)
     mid_dens = total_dens/2
     pivot_point = np.interp(mid_dens, cum_dens, sorted_lum)
-    
+    print(pivot_point)
     rho = total_dens
     z = np.linspace(np.min(sorted_lum), np.max(sorted_lum), 300)
     interpolation = np.interp(z, sorted_lum, cum_dens, left = 0, right = 1)
@@ -756,14 +761,15 @@ def activeness(lum, xlabel, V_max_inverse):
     position = np.min(position)
     z_active = z[position]
     
-
-    plt.yscale('log') 
+    plt.figure()
+    plt.yscale('linear') 
     plt.plot(z, rho_greater, color = 'black')
     plt.plot(z, rho_normal, color = 'blue')
     plt.plot(z, rho_active, color = 'red')
     plt.axvline(x = z_active, linestyle='--', color='black')
     plt.xlabel(xlabel)
     plt.ylabel('normalized density')
+    plt.show()
     
     return z_active
 
@@ -836,7 +842,7 @@ X_good, X_active, X_lum_ex, X_col_ex, X_normal, Hard_non_det, Soft_non_det_norma
     
     
 def weighted_hists(L, V_max_inverse, good, active, lum_ex, col_ex, normal, alpha_value, bin_number):
-    
+    plt.figure()
     n_bins = np.linspace(np.nanmin(L),np.nanmax(L), bin_number)
     L1 = L[good]
     V_max_inverse1 = V_max_inverse[good]
@@ -857,8 +863,9 @@ def weighted_hists(L, V_max_inverse, good, active, lum_ex, col_ex, normal, alpha
     V_max_inverse4 = V_max_inverse[set4]
     plt.hist(L4, bins = n_bins, weights = V_max_inverse4, log = True, color = 'blue', alpha = alpha_value)
     
+    plt.show()
     printed = 'Printed!'
-    
+
     return printed
 
 
@@ -881,10 +888,84 @@ color_Radio_IR_weighted = weighted_hists(color_Radio_IR_excess, V_max_inverse_co
 color_X_weighted = weighted_hists(color_X_excess, V_max_inverse_color_X, X_good, X_active, X_lum_ex, 
                    X_col_ex, X_normal, alpha_value = 1, bin_number = 21)
 
+#%% LITERATURE COMPARISON
+
+def literature_comp(L, active, col_ex, lum_ex, normal, V_max_inverse, xlabel, mode):
+    
+    if mode == 'lum':
+        active_gal = np.union1d(active, lum_ex)
+        
+    if mode == 'col':
+        active_gal = np.union1d(active, col_ex)
+        
+    good_total = len(L[np.isfinite(L)]) # number of normal galaxies
+    sorted_indices = np.argsort(L)[0:good_total] # indices sorted by L
+    sorted_L = L[sorted_indices] # L sorted for normal galaxies
+    sorted_density = V_max_inverse[sorted_indices]
+    cum_dens = np.cumsum(sorted_density)
+    total_dens = np.max(cum_dens)
+    rho = total_dens
+    z = np.linspace(np.min(sorted_L), np.max(sorted_L), 300)
+    interpolation = np.interp(z, sorted_L, cum_dens)
+    rho_greater = rho - interpolation
+
+    
+    good_active = len(L[active_gal]) # number of normal galaxies
+    sorted_indices_active = np.argsort(L[active_gal])[0:good_active] # indices sorted by L
+    sorted_L_active = L[active_gal][sorted_indices_active] # L sorted for normal galaxies
+    sorted_density_active = V_max_inverse[active_gal][sorted_indices_active]
+    cum_dens_active = np.cumsum(sorted_density_active)
+    total_dens_active = np.max(cum_dens_active)
+    rho_active = total_dens_active
+    interpolation_active = np.interp(z, sorted_L_active, cum_dens_active)
+    rho_greater_active = rho_active - interpolation_active
+
+    f_active = rho_greater_active/rho_greater
+    position_50 = np.where(f_active >= 0.5)[0]
+    position_50 = np.min(position_50)
+    z_active_50 = z[position_50]
+    
+    position_90 = np.where(f_active >= 0.9)[0]
+    if len(position_90)>0:
+        
+        position_90 = np.min(position_90)
+        z_active_90 = z[position_90]
+    else:
+        z_active_90 = np.nan
+        
+    plt.figure()
+    plt.yscale('log') 
+    plt.plot(z, rho_greater, color = 'black')
+    plt.plot(z, rho_greater_active, color = 'red')
+    plt.xlabel(xlabel)
+    plt.ylabel('normalized density')
+    plt.grid()
+    plt.show()
+    return z_active_50, z_active_90
+
+
+
+
+color_IR[np.isnan(V_max_inverse_color_IR)==True]=np.nan
+l_ir_col_50, l_ir_col_90 = literature_comp(color_IR, IR_active, IR_col_ex, IR_lum_ex, IR_normal,
+                                           V_max_inverse_color_IR, 'color IR', mode='col')
+
+color_Radio_IR[np.isnan(V_max_inverse_color_Radio_IR)==True]=np.nan
+l_radio_col_50, l_radio_col_90 = literature_comp(color_Radio_IR, Radio_active, Radio_col_ex, Radio_lum_ex, Radio_normal,
+                              V_max_inverse_color_Radio_IR, 'color Radio-IR', mode='col')
+
+log_L_Radio[np.isnan(V_max_inverse_Radio)==True]=np.nan
+l_radio_lum_50, l_radio_lum_90 = literature_comp(log_L_Radio, Radio_active, Radio_col_ex, Radio_lum_ex, Radio_normal,
+                              V_max_inverse_Radio, 'log10(L Radio)', mode='lum')
+
+log_L_Hard[np.isnan(V_max_inverse_Hard)==True]=np.nan
+l_hard_lum_50, l_hard_lum_90 = literature_comp(log_L_Hard, X_active, X_col_ex, X_lum_ex, X_normal,
+                             V_max_inverse_Hard, 'log10(L Hard X-Rays)', mode='lum')
 #%% SCATTER PLOTS:
     
 def plotting(L, color, active, lum, col, normal, alpha_value, left, right, bottom, top, 
-             right_axis, f1, f2, xlab, ylab, ylab2, is_excess, v_ex, h_ex):
+             right_axis, f1, f2, xlab, ylab, ylab2, is_excess, v_ex, h_ex, v_ex2, h_ex2,
+             v_ex3, h_ex3):
     
     fig, ax = plt.subplots()
     
@@ -897,9 +978,18 @@ def plotting(L, color, active, lum, col, normal, alpha_value, left, right, botto
     plt.ylim(bottom = bottom, top = top)
     
     if is_excess == True:
-    
+        
+        #Literature
         plt.axvline(x = v_ex, linestyle='--', color='black')
         plt.axhline(y = h_ex, linestyle='--', color='black')
+        
+        # This work f_active = 50%
+        plt.axvline(x = v_ex2, linestyle='-', color='cyan')
+        plt.axhline(y = h_ex2, linestyle='-', color='cyan')
+        
+        # This work f_active = 90%
+        plt.axvline(x = v_ex3, linestyle='-', color='blue')
+        plt.axhline(y = h_ex3, linestyle='-', color='blue')
     
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
@@ -921,7 +1011,8 @@ scatter_IR_excess = plotting(L_excess_IR2, color_IR_excess, IR_active, IR_lum_ex
                              f1 = None, f2 = None,
                              xlab = 'IR (W2 band) luminosity excess', ylab = 'IR color excess', 
                              ylab2 = '', is_excess = True, v_ex = threshold_IR2_excess,
-                             h_ex = threshold_color_IR_excess)
+                             h_ex = threshold_color_IR_excess, v_ex2 = np.inf, h_ex2 = np.inf,
+                             v_ex3 = np.inf, h_ex3 = np.inf)
 
 scatter_Radio_excess = plotting(L_excess_Radio, color_Radio_IR_excess, Radio_active, Radio_lum_ex,
                                 Radio_col_ex, Radio_normal, alpha_value = .1, left = -1.5,
@@ -929,7 +1020,8 @@ scatter_Radio_excess = plotting(L_excess_Radio, color_Radio_IR_excess, Radio_act
                                 f1 = None, f2 = None,
                                 xlab = 'Radio luminosity excess', ylab = 'Radio-IR (W4 band) color excess',
                                 ylab2 = '', is_excess = True, v_ex = threshold_Radio_excess, 
-                                h_ex = threshold_color_Radio_IR_excess)
+                                h_ex = threshold_color_Radio_IR_excess, v_ex2 = np.inf, h_ex2 = np.inf,
+                                v_ex3 = np.inf, h_ex3 = np.inf)
 
 scatter_X_excess = plotting(L_excess_Hard, color_X_excess, X_active, X_lum_ex,
                             X_col_ex, X_normal, alpha_value = .3, left = -1.5,
@@ -937,9 +1029,10 @@ scatter_X_excess = plotting(L_excess_Hard, color_X_excess, X_active, X_lum_ex,
                             f1 = None, f2 = None,
                             xlab = 'Hard luminosity excess', ylab = 'X-Rays color excess', 
                             ylab2 = '', is_excess = True, v_ex = threshold_Hard_excess,
-                            h_ex = threshold_color_X_excess)
+                            h_ex = threshold_color_X_excess, v_ex2 = np.inf, h_ex2 = np.inf,
+                            v_ex3 = np.inf, h_ex3 = np.inf)
 
-# Plotting scattered luminosities and colors:
+#%% Plotting scattered luminosities and colors:
     
 scatter_IR = plotting(log_L_IR2, color_IR, IR_active, IR_lum_ex,
                       IR_col_ex, IR_normal, alpha_value = .1, left = 40, 
@@ -947,7 +1040,9 @@ scatter_IR = plotting(log_L_IR2, color_IR, IR_active, IR_lum_ex,
                       f1 = lit_from_ours_IR, f2 = ours_from_lit_IR,
                       xlab = 'log10(IR (W2 band) luminosity)', ylab = 'IR color', 
                       ylab2 = 'W1-W2', is_excess = True, v_ex = 0,
-                      h_ex = threshold_color_IR_Stern)
+                      h_ex = threshold_color_IR_Stern,
+                      v_ex2 = np.inf, h_ex2 = l_ir_col_50,
+                      v_ex3 = np.inf, h_ex3 = l_ir_col_90)
 
 scatter_Radio = plotting(log_L_Radio, color_Radio_IR, Radio_active, Radio_lum_ex,
                          Radio_col_ex, Radio_normal, alpha_value = .1, left = 36.5,
@@ -955,15 +1050,18 @@ scatter_Radio = plotting(log_L_Radio, color_Radio_IR, Radio_active, Radio_lum_ex
                          f1 = lit_from_ours_Radio, f2 = ours_from_lit_Radio,
                          xlab = 'log10(Radio luminosity)', ylab = 'Radio-IR (W4 band) color',
                          ylab2 = 'q24', is_excess = True, v_ex = threshold_Radio_loud,
-                         h_ex = threshold_color_Radio_IR_Ibar)
+                         h_ex = threshold_color_Radio_IR_Ibar,
+                         v_ex2 = l_radio_lum_50, h_ex2 = l_radio_col_50,
+                         v_ex3 = l_radio_lum_90, h_ex3 = l_radio_col_90)
 
 scatter_X = plotting(log_L_Hard, color_X, X_active, X_lum_ex,
                      X_col_ex, X_normal, alpha_value = .3, left = 39.5,
                      right = 44, bottom = -1.25, top = 2.5, right_axis = False,
                      f1 = None, f2 = None,
                      xlab = 'log10(Hard X-Rays luminosity)', ylab = 'X-Rays color', 
-                     ylab2 = '', is_excess = True, v_ex = threshold_Hard_lit,
-                     h_ex = np.inf)
+                     ylab2 = '', is_excess = True, v_ex = threshold_Hard_lit, h_ex = np.inf,
+                     v_ex2 = l_hard_lum_50, h_ex2 = np.inf,
+                     v_ex3 = l_hard_lum_90, h_ex3 = np.inf)
 
 #%% STELLAR MASS vs SFR
 
